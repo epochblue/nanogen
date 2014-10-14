@@ -21,11 +21,20 @@ import docopt
 import markdown
 
 __all__ = ['main']
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
 
-FILES = {
+CONFIG_FILES = {
     'MANIFEST': 'manifest.yaml'
+}
+
+TEMPLATES = {
+    'POST': 'article.html',
+    'COLLECTIONS': {
+        'INDEX': 'index.html',
+        'ARCHIVE': 'archive.html',
+        'RSS': 'rss.xml'
+    }
 }
 
 DIRS = {
@@ -81,18 +90,31 @@ class Post(object):
                             str(self.publish_date.year),
                             str(self.publish_date.month),
                             self.filename)
+    @property
+    def layout(self):
+        return self.front_matter.get('layout')
 
 
 def _initialize_blog_dir(path):
-    for f in FILES.values():
+    for f in CONFIG_FILES.values():
         file_path = os.path.join(path, f)
         if not os.path.exists(file_path):
-            subprocess.call(['touch', f])
+            subprocess.call(['touch', file_path])
 
     for d in DIRS.values():
         dir_path = os.path.join(path, d)
         if not os.path.exists(dir_path):
-            subprocess.call(['mkdir', d])
+            subprocess.call(['mkdir', dir_path])
+
+    for c in TEMPLATES['COLLECTIONS'].values():
+        c_path = os.path.join(path, DIRS['TEMPLATES'], c)
+        if not os.path.exists(c_path):
+            subprocess.call(['touch', c_path])
+
+    t_path = os.path.join(path, DIRS['TEMPLATES'], TEMPLATES['POST'])
+    if not os.path.exists(t_path):
+        subprocess.call(['touch', t_path])
+
 
 
 def _initialize_site_dir(path):
@@ -115,7 +137,7 @@ def _remove_site_dir(path):
 
 
 def _read_manifest(path):
-    file_path = os.path.join(path, FILES['MANIFEST'])
+    file_path = os.path.join(path, CONFIG_FILES['MANIFEST'])
     with open(file_path, 'r') as f:
         return yaml.load(f.read())
 
@@ -137,15 +159,8 @@ def _write_perm_page(post, site_path, html):
 
 
 def _process_post(post, config, site_path):
-    layout = post.front_matter.get('layout', None)
-    if layout is None:
-        raise ValueError('{} has no defined layout'.format(post.path))
-
-    try:
-        tmpl = JINJA_ENV.get_template(layout)
-    except:
-        raise ValueError('Unable to render template {}'.format(layout))
-
+    layout = post.layout or TEMPLATES['POST']
+    tmpl = JINJA_ENV.get_template(layout)
     html = tmpl.render(site=config, post=post)
     _write_perm_page(post, site_path, html)
 
@@ -175,7 +190,7 @@ def build(path):
     for post in posts:
         _process_post(post, config, site_path)
 
-    for t in ['index.html', 'archive.html', 'rss.xml']:
+    for t in TEMPLATES['COLLECTIONS'].values():
         _write_collection(site_path, t, config, posts)
 
 
