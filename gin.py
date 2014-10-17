@@ -42,6 +42,7 @@ DIRS = {
     'POSTS': '_posts',
     'STATIC': '_static',
     'TEMPLATES': '_templates',
+    'DRAFTS': '_drafts',
     'SITE': 'site'
 }
 
