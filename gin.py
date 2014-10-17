@@ -11,9 +11,10 @@ Options:
     --version       Show version.
 """
 from __future__ import absolute_import, print_function
+
 import os
 import subprocess
-from collections import OrderedDict
+from datetime import datetime
 
 import yaml
 import jinja2
@@ -21,12 +22,12 @@ import docopt
 import markdown
 
 __all__ = ['main']
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
 
-CONFIG_FILES = {
-    'MANIFEST': 'manifest.yaml'
-}
+CONFIG_FILE = 'config.yaml'
+
+FM_SEPARATOR = '----'
 
 TEMPLATES = {
     'POST': 'article.html',
@@ -44,27 +45,35 @@ DIRS = {
     'SITE': 'site'
 }
 
-TEMPLATE_PATH = os.path.join(os.path.abspath('.'), DIRS['TEMPLATES'])
+TEMPLATE_PATH = os.path.join(os.path.abspath(os.getcwd()), DIRS['TEMPLATES'])
 
 JINJA_ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_PATH))
 
 
 class Post(object):
     """Represents a post."""
-    def __init__(self, path, date, fname):
+    def __init__(self, path, fname):
+        split_fname = fname.split('-')
+        d = '{}-{}-{}'.format(split_fname[0], split_fname[1], split_fname[2])
+
+        self.publish_date = datetime.strptime(d, '%Y-%m-%d')
         self.site_path = os.path.join(path, 'site')
         self.file_path = os.path.join(path, '_posts', fname)
 
-        if not os.path.exists(self.file_path):
-            raise ValueError('Unable to locate file {}'.format(self.file_path))
+        self.publish_folder = '{}/{}'.format(self.publish_date.year,
+                                             self.publish_date.month)
+        pub_path = '{}/{}-{}'.format(self.publish_folder,
+                                     split_fname[2],
+                                     split_fname[3])
+
+        self.publish_path = os.path.join(self.site_path, pub_path)
 
         with open(self.file_path, 'r') as f: 
             file_str = f.read()
         
-        split_file = file_str.split('----')
+        split_file = file_str.split(FM_SEPARATOR)
         self.front_matter = yaml.load(split_file[1])
         self.content = markdown.markdown(split_file[2].strip())
-        self.publish_date = date
 
         # Process the title differently, in case it has Markdown in it
         title = self.front_matter.pop('title')
@@ -96,10 +105,9 @@ class Post(object):
 
 
 def _initialize_blog_dir(path):
-    for f in CONFIG_FILES.values():
-        file_path = os.path.join(path, f)
-        if not os.path.exists(file_path):
-            subprocess.call(['touch', file_path])
+    file_path = os.path.join(path, CONFIG_FILE)
+    if not os.path.exists(file_path):
+        subprocess.call(['touch', file_path])
 
     for d in DIRS.values():
         dir_path = os.path.join(path, d)
@@ -114,7 +122,6 @@ def _initialize_blog_dir(path):
     t_path = os.path.join(path, DIRS['TEMPLATES'], TEMPLATES['POST'])
     if not os.path.exists(t_path):
         subprocess.call(['touch', t_path])
-
 
 
 def _initialize_site_dir(path):
@@ -136,25 +143,28 @@ def _remove_site_dir(path):
     subprocess.call(['rm', '-r', site_path]) 
 
 
-def _read_manifest(path):
-    file_path = os.path.join(path, CONFIG_FILES['MANIFEST'])
+def _read_config(path):
+    file_path = os.path.join(path, CONFIG_FILE)
     with open(file_path, 'r') as f:
         return yaml.load(f.read())
 
 
-def _sort_posts(posts):
-    by_date = sorted(posts.items(), key=lambda t: t[0])
-    rev_chrono = reversed(by_date)
-    return OrderedDict(rev_chrono)
+def _sort_posts(path):
+    def is_post_file(p):
+        isfile = os.path.isfile(os.path.join(path, p))
+        valid_filename = len(p.split('-')) == 4
+        return isfile and valid_filename
+
+    posts = [p for p in os.listdir(path) if is_post_file(p)]
+    return reversed(sorted(posts))
 
 
 def _write_perm_page(post, site_path, html):
-    year, month = post.publish_date.year, post.publish_date.month
-    date_folder = os.path.join(site_path, '{}/{}'.format(year, month))
+    date_folder = os.path.join(site_path, post.publish_folder)
     if not os.path.exists(date_folder):
         subprocess.call(['mkdir', '-p', date_folder])
 
-    with open(post.path, 'w') as p:
+    with open(post.publish_path, 'w') as p:
         p.write(html)
 
 
@@ -182,10 +192,9 @@ def clean(path):
 
 def build(path):
     site_path, static_dir = _initialize_site_dir(path)
-    manifest = _read_manifest(path)
-    config = manifest.get('config', {})
-    ps = _sort_posts(manifest['posts'])
-    posts = [Post(path, dt, fname) for dt, fname in ps.items()]
+    config = _read_config(path)
+    ps = _sort_posts(os.path.join(path, DIRS['POSTS']))
+    posts = [Post(path, fname) for fname in ps]
 
     for post in posts:
         _process_post(post, config, site_path)
