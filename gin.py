@@ -22,7 +22,7 @@ import docopt
 import markdown
 
 __all__ = ['main']
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
 
 CONFIG_FILE = 'config.yaml'
