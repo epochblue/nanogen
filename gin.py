@@ -100,9 +100,10 @@ class Post(object):
                             str(self.publish_date.year),
                             str(self.publish_date.month),
                             self.filename)
+
     @property
     def layout(self):
-        return self.front_matter.get('layout')
+        return self.front_matter.get('template')
 
 
 def _initialize_blog_dir(path):
