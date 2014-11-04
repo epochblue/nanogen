@@ -31,6 +31,7 @@ FM_SEPARATOR = '----'
 
 TEMPLATES = {
     'POST': 'article.html',
+    'PAGE': 'article.html',
     'COLLECTIONS': {
         'INDEX': 'index.html',
         'ARCHIVE': 'archive.html',
@@ -40,6 +41,7 @@ TEMPLATES = {
 
 DIRS = {
     'POSTS': '_posts',
+    'PAGES': '_pages',
     'STATIC': '_static',
     'TEMPLATES': '_templates',
     'DRAFTS': '_drafts',
@@ -99,6 +101,45 @@ class Post(object):
         return os.path.join(self.site_path,
                             str(self.publish_date.year),
                             str(self.publish_date.month),
+                            self.filename)
+
+    @property
+    def layout(self):
+        return self.front_matter.get('template')
+
+
+class Page(object):
+    """Represents a page."""
+    def __init__(self, path, fname):
+        self.file_path = os.path.join(path, DIRS['PAGES'], fname)
+        self.publish_path = os.path.join(path, DIRS['SITE'])
+
+        with open(self.file_path, 'r') as f:
+            file_str = f.read()
+
+        split_file = file_str.split(FM_SEPARATOR)
+        self.front_matter = yaml.load(split_file[1])
+        self.content = markdown.markdown(split_file[2].strip())
+
+        # Process the title differently, in case it has Markdown in it
+        title = self.front_matter.pop('title')
+        self.title = markdown.markdown(title.strip())
+        self.title = self.title.replace('<p>', '').replace('</p>', '')  # ew
+
+        for key, value in self.front_matter.items():
+            setattr(self, key, value)
+
+    @property
+    def permalink(self):
+        return '{}.html'.format(self.slug)
+
+    @property
+    def filename(self):
+        return '{}.html'.format(self.slug)
+
+    @property
+    def path(self):
+        return os.path.join(self.site_path,
                             self.filename)
 
     @property
@@ -168,11 +209,24 @@ def _write_perm_page(post, site_path, html):
         p.write(html)
 
 
+def _write_page(post, site_path, html):
+    page_path = os.path.join(site_path, post.filename)
+    with open(page_path, 'w') as p:
+        p.write(html)
+
+
 def _process_post(post, config, site_path):
     layout = post.layout or TEMPLATES['POST']
     tmpl = JINJA_ENV.get_template(layout)
     html = tmpl.render(site=config, post=post)
     _write_perm_page(post, site_path, html)
+
+
+def _process_page(post, config, site_path):
+    layout = post.layout or TEMPLATES['PAGE']
+    tmpl = JINJA_ENV.get_template(layout)
+    html = tmpl.render(site=config, post=post)
+    _write_page(post, site_path, html)
 
 
 def _write_collection(path, template, config, posts):
@@ -193,11 +247,16 @@ def clean(path):
 def build(path):
     site_path, static_dir = _initialize_site_dir(path)
     config = _read_config(path)
+
     ps = _sort_posts(os.path.join(path, DIRS['POSTS']))
     posts = [Post(path, fname) for fname in ps]
-
     for post in posts:
         _process_post(post, config, site_path)
+
+    pgs = os.listdir(os.path.join(path, DIRS['PAGES']))
+    pages = [Page(path, fname) for fname in pgs]
+    for page in pages:
+        _process_page(page, config, site_path)
 
     for t in TEMPLATES['COLLECTIONS'].values():
         _write_collection(site_path, t, config, posts)
