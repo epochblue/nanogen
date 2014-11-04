@@ -8,7 +8,7 @@ entry_points = {
 }
 
 setup(name='gin',
-      version='0.3.1',
+      version='0.4.0',
       description='A very small static site generator',
       author='Bill Israel',
       author_email='bill.israel@gmail.com',
