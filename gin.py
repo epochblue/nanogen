@@ -129,10 +129,8 @@ def _initialize_blog_dir(path):
 def _initialize_site_dir(path):
     site_path = os.path.join(path, DIRS['SITE'])
 
-    if os.path.exists(site_path):
-        subprocess.call(['rm', '-r', site_path])
-
-    subprocess.call(['mkdir', site_path])
+    if not os.path.exists(site_path):
+        subprocess.call(['mkdir', site_path])
 
     static_path = os.path.join(path, DIRS['STATIC'])
     site_static_path = os.path.join(site_path, 'static')
