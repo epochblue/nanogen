@@ -58,8 +58,8 @@ class Post(object):
         d = '{}-{}-{}'.format(split_fname[0], split_fname[1], split_fname[2])
 
         self.publish_date = datetime.strptime(d, '%Y-%m-%d')
-        self.site_path = os.path.join(path, 'site')
-        self.file_path = os.path.join(path, '_posts', fname)
+        self.site_path = os.path.join(path, DIRS['SITE'])
+        self.file_path = os.path.join(path, DIRS['POSTS'], fname)
 
         self.publish_folder = '{}/{}'.format(self.publish_date.year,
                                              self.publish_date.month)
@@ -133,8 +133,8 @@ def _initialize_site_dir(path):
 
     subprocess.call(['mkdir', site_path])
 
-    static_path = os.path.join(path, '_static')
-    site_static_path = os.path.join(path, 'site', 'static')
+    static_path = os.path.join(path, DIRS['STATIC'])
+    site_static_path = os.path.join(site_path, 'static')
     subprocess.call(['cp', '-r', static_path, site_static_path])
     return site_path, site_static_path
 
