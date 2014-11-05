@@ -13,6 +13,7 @@ Options:
 from __future__ import absolute_import, print_function
 
 import os
+import sys
 import subprocess
 from datetime import datetime
 
@@ -56,27 +57,26 @@ JINJA_ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_PATH))
 class Post(object):
     """Represents a post."""
     def __init__(self, path, fname):
-        split_fname = fname.split('-')
-        d = '{}-{}-{}'.format(split_fname[0], split_fname[1], split_fname[2])
+        year, month, day, remainder = fname.split('-', 3)
 
+        d = '{}-{}-{}'.format(year, month, day)
         self.publish_date = datetime.strptime(d, '%Y-%m-%d')
+
         self.site_path = os.path.join(path, DIRS['SITE'])
         self.file_path = os.path.join(path, DIRS['POSTS'], fname)
 
         self.publish_folder = '{}/{}'.format(self.publish_date.year,
                                              self.publish_date.month)
-        pub_path = '{}/{}-{}'.format(self.publish_folder,
-                                     split_fname[2],
-                                     split_fname[3])
 
+        pub_path = '{}/{}-{}'.format(self.publish_folder, day, remainder)
         self.publish_path = os.path.join(self.site_path, pub_path)
 
         with open(self.file_path, 'r') as f: 
             file_str = f.read()
         
-        split_file = file_str.split(FM_SEPARATOR)
-        self.front_matter = yaml.load(split_file[1])
-        self.content = markdown.markdown(split_file[2].strip())
+        _, front_matter, content = file_str.split(FM_SEPARATOR)
+        self.front_matter = yaml.load(front_matter)
+        self.content = markdown.markdown(content.strip())
 
         # Process the title differently, in case it has Markdown in it
         title = self.front_matter.pop('title')
@@ -84,7 +84,8 @@ class Post(object):
         self.title = self.title.replace('<p>', '').replace('</p>', '')  # ew
 
         for key, value in self.front_matter.items():
-            setattr(self, key, value)
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     @property
     def permalink(self):
@@ -117,9 +118,9 @@ class Page(object):
         with open(self.file_path, 'r') as f:
             file_str = f.read()
 
-        split_file = file_str.split(FM_SEPARATOR)
-        self.front_matter = yaml.load(split_file[1])
-        self.content = markdown.markdown(split_file[2].strip())
+        _, front_matter, content = file_str.split(FM_SEPARATOR)
+        self.front_matter = yaml.load(front_matter)
+        self.content = markdown.markdown(content.strip())
 
         # Process the title differently, in case it has Markdown in it
         title = self.front_matter.pop('title')
@@ -127,7 +128,8 @@ class Page(object):
         self.title = self.title.replace('<p>', '').replace('</p>', '')  # ew
 
         for key, value in self.front_matter.items():
-            setattr(self, key, value)
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     @property
     def permalink(self):
@@ -139,32 +141,11 @@ class Page(object):
 
     @property
     def path(self):
-        return os.path.join(self.site_path,
-                            self.filename)
+        return os.path.join(self.site_path, self.filename)
 
     @property
     def layout(self):
         return self.front_matter.get('template')
-
-
-def _initialize_blog_dir(path):
-    file_path = os.path.join(path, CONFIG_FILE)
-    if not os.path.exists(file_path):
-        subprocess.call(['touch', file_path])
-
-    for d in DIRS.values():
-        dir_path = os.path.join(path, d)
-        if not os.path.exists(dir_path):
-            subprocess.call(['mkdir', dir_path])
-
-    for c in TEMPLATES['COLLECTIONS'].values():
-        c_path = os.path.join(path, DIRS['TEMPLATES'], c)
-        if not os.path.exists(c_path):
-            subprocess.call(['touch', c_path])
-
-    t_path = os.path.join(path, DIRS['TEMPLATES'], TEMPLATES['POST'])
-    if not os.path.exists(t_path):
-        subprocess.call(['touch', t_path])
 
 
 def _initialize_site_dir(path):
@@ -179,11 +160,6 @@ def _initialize_site_dir(path):
     return site_path, site_static_path
 
 
-def _remove_site_dir(path):
-    site_path = os.path.join(path, DIRS['SITE'])
-    subprocess.call(['rm', '-r', site_path]) 
-
-
 def _read_config(path):
     file_path = os.path.join(path, CONFIG_FILE)
     with open(file_path, 'r') as f:
@@ -193,7 +169,7 @@ def _read_config(path):
 def _sort_posts(path):
     def is_post_file(p):
         isfile = os.path.isfile(os.path.join(path, p))
-        valid_filename = len(p.split('-')) == 4
+        valid_filename = len(p.split('-', 3)) == 4
         return isfile and valid_filename
 
     posts = [p for p in os.listdir(path) if is_post_file(p)]
@@ -237,14 +213,50 @@ def _write_collection(path, template, config, posts):
 
 
 def init(path):
-    _initialize_blog_dir(path)
+    """
+    Initialize the given path with default files and templates.
+
+    :param path: The filesystem path to initialize
+    :return: None
+    """
+    file_path = os.path.join(path, CONFIG_FILE)
+    if not os.path.exists(file_path):
+        subprocess.call(['touch', file_path])
+
+    for d in DIRS.values():
+        dir_path = os.path.join(path, d)
+        if not os.path.exists(dir_path):
+            subprocess.call(['mkdir', dir_path])
+
+    for c in TEMPLATES['COLLECTIONS'].values():
+        c_path = os.path.join(path, DIRS['TEMPLATES'], c)
+        if not os.path.exists(c_path):
+            subprocess.call(['touch', c_path])
+
+    t_path = os.path.join(path, DIRS['TEMPLATES'], TEMPLATES['POST'])
+    if not os.path.exists(t_path):
+        subprocess.call(['touch', t_path])
 
 
 def clean(path):
-    _remove_site_dir(path)
+    """
+    Remove any generated files from the given path.
+
+    :param path: The path to clean
+    :return: None
+    """
+    site_path = os.path.join(path, DIRS['SITE'])
+    subprocess.call(['rm', '-r', site_path])
 
 
 def build(path):
+    """
+    Walk the given path, looking for blog posts and one-off pages, and convert
+    those into a `site` directory that can be uploaded to any web host.
+
+    :param path: The path to scan and build from
+    :return: None
+    """
     site_path, static_dir = _initialize_site_dir(path)
     config = _read_config(path)
 
@@ -263,6 +275,11 @@ def build(path):
 
 
 def main():
+    """
+    The entry point for using `gin` via the command line.
+
+    :return: None
+    """
     args = docopt.docopt(__doc__, version=__version__)
     p = os.getcwd() if args['PATH'] is None else args['PATH']
     path = os.path.abspath(p)
@@ -278,4 +295,4 @@ def main():
             build(path)
     except Exception as e:
         print('Error: {}'.format(e))
-
+        sys.exit(1)
