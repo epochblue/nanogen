@@ -4,17 +4,17 @@ from setuptools import setup
 
 requires = ['jinja2 >= 2.7', 'markdown', 'pyyaml', 'docopt']
 entry_points = {
-    'console_scripts': ['gin = gin:main']
+    'console_scripts': ['nanogen = nanogen:main']
 }
 
-setup(name='gin',
+setup(name='nanogen',
       version='0.4.0',
       description='A very small static site generator',
       author='Bill Israel',
       author_email='bill.israel@gmail.com',
       license='MIT',
-      url='https://github.com/epochblue/gin',
-      py_modules=['gin'],
+      url='https://github.com/epochblue/nanogen',
+      py_modules=['nanogen'],
       install_requires=requires,
       entry_points=entry_points,
       keywords=['ssg', 'generator', 'static site generator', 'blog'],

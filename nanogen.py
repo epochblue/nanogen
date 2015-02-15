@@ -1,10 +1,10 @@
 """
-gin - a very small static site generator
+nanogen - a very small static site generator
 
 Usage:
-    gin init [PATH]
-    gin build
-    gin clean
+    nanogen init [PATH]
+    nanogen build
+    nanogen clean
 
 Options:
     -h --help       Show this message.
@@ -276,7 +276,7 @@ def build(path):
 
 def main():
     """
-    The entry point for using `gin` via the command line.
+    The entry point for using `nanogen` via the command line.
 
     :return: None
     """

@@ -1,38 +1,38 @@
-# gin
+# nanogen
 
 A very small static site generator written in Python.
 
 ## Installation
 
-The best way to install `gin` is through `pip`:
+The best way to install `nanogen` is through `pip`:
 
-    $> pip install gin
+    $> pip install nanogen
 
 If you don't want to install it via `pip`, you can install it by hand:
 
-    $> git clone https://github.com/epochblue/gin
-    $> cd gin
+    $> git clone https://github.com/epochblue/nanogen
+    $> cd nanogen
     $> python setup.py install
 
 **Note**: To avoid possible dependency version issues, we advise installing
-`gin` into a virtual environment, rather than installing it globally.
+`nanogen` into a virtual environment, rather than installing it globally.
 
 
 ## How To Use
 
 ### Initializing
 
-Once `gin` is installed, navigate to the directory you'd like to use as your
+Once `nanogen` is installed, navigate to the directory you'd like to use as your
 new blog. Our examples will use a `blog` directory in our home directory:
 
     cd ~/blog
 
-Once you're there, you can run `gin`'s `init` command to get started:
+Once you're there, you can run `nanogen`'s `init` command to get started:
 
-    gin init
+    nanogen init
 
 Running this command will generate the base directories and files that are
-used by `gin` to build your static site. When this command completes,
+used by `nanogen` to build your static site. When this command completes,
 our blog directory should look like this:
 
     ~/blog
@@ -48,9 +48,9 @@ our blog directory should look like this:
     |   `-- rss.xml
     `-- config.yaml
 
-These are all the default files and folders used by `gin`. The folder names
+These are all the default files and folders used by `nanogen`. The folder names
 and the templates for collection views (`archive.html`, `index.html`, and
-`rss.xml`) are currently not editable by the user. By default, `gin` will use
+`rss.xml`) are currently not editable by the user. By default, `nanogen` will use
 `article.html` as the template for articles and pages, but this is overrideable
 in the front-matter for each page and article.
 
@@ -79,7 +79,7 @@ filename `2014-11-08-example-post.html` will be processed into a date-specific
 folder: `site/<year>/<month>/<day>-<name>.html`.
 
 Draft posts can be stored in the `_drafts` folder. This folder is included for
-convenience, and is never read/scanned/processed by `gin`.
+convenience, and is never read/scanned/processed by `nanogen`.
 
 For pages that aren't intended to be blog posts (About pages, Contact pages,
 etc), the `_pages` folder should be used. Files in this folder don't have a
@@ -97,7 +97,7 @@ whose structure matches exactly what it finds in `_static`.
 Once your files are all in the right places and you're ready to generate your
 site, you can use the `build` command:
 
-    gin build
+    nanogen build
 
 This command will walk your `_posts` and `_pages` folders, process any valid
 files it finds, and will write all the generated files into a `site` folder.
@@ -108,29 +108,29 @@ root for you web server.
 
 ### Cleaning
 
-`gin` provides a `clean` command to remove your `site` folder if it somehow
+`nanogen` provides a `clean` command to remove your `site` folder if it somehow
 get scorrupted or you would like to generate your site from scratch:
 
-    gin clean
+    nanogen clean
 
 
 ## Misc Notes
 
-1. `gin` doesn't provide a `watch` mechanism found in other static site
+1. `nanogen` doesn't provide a `watch` mechanism found in other static site
 generators. If you'd like this functionality, you can simply run `build` in
 an infinite loop in Bash. The following example will run a build every second:
 
-        $> while :; do gin build; sleep 1; done
+        $> while :; do nanogen build; sleep 1; done
 
 2. The items in the front-matter in the above example are the minimal required
-by `gin`. However, you can include all the custom fields you'd like to include.
+by `nanogen`. However, you can include any custom fields you'd like to include.
 All key/value pairs in the front-matter are passed to each template, so you can
-use custom front-matter fields if you'd like to.
+use these custom front-matter fields in your templates if you'd like to.
 
 
 ## License
 
-`gin` is MIT licensed. Please see included `LICENSE` file for more information.
+`nanogen` is MIT licensed. Please see included `LICENSE` file for more information.
 
 
 ## Author
