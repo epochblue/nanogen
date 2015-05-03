@@ -1,10 +1,10 @@
-#!/usr/bin/env python
-
 from setuptools import setup
 
-requires = ['jinja2 >= 2.7', 'markdown', 'pyyaml', 'docopt']
+with open("requirements.txt") as f:
+    requires = [l for l in f.read().splitlines() if l]
+
 entry_points = {
-    'console_scripts': ['nanogen = nanogen:main']
+    'console_scripts': ['nanogen = cli:cli']
 }
 
 setup(name='nanogen',

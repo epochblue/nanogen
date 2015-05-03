@@ -1,298 +1,234 @@
 """
 nanogen - a very small static site generator
-
-Usage:
-    nanogen init [PATH]
-    nanogen build
-    nanogen clean
-
-Options:
-    -h --help       Show this message.
-    --version       Show version.
 """
-from __future__ import absolute_import, print_function
-
 import os
-import sys
+import re
+import logging
+import datetime
 import subprocess
-from datetime import datetime
 
 import yaml
+import click
 import jinja2
-import docopt
 import markdown
 
-__all__ = ['main']
-__version__ = '0.4.0'
+from logger import log
+
+
+__all__ = ['cli']
+__version__ = '0.5.0'
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
 
-CONFIG_FILE = 'config.yaml'
+PATHS = {
+    'cwd': os.getcwd(),
+    'site': os.path.join(os.getcwd(), '_site'),
+    'posts': os.path.join(os.getcwd(), '_posts'),
+    'layouts': os.path.join(os.getcwd(), '_layouts'),
+}
 
 FM_SEPARATOR = '----'
 
-TEMPLATES = {
-    'POST': 'article.html',
-    'PAGE': 'article.html',
-    'COLLECTIONS': {
-        'INDEX': 'index.html',
-        'ARCHIVE': 'archive.html',
-        'RSS': 'rss.xml'
-    }
-}
-
-DIRS = {
-    'POSTS': '_posts',
-    'PAGES': '_pages',
-    'STATIC': '_static',
-    'TEMPLATES': '_templates',
-    'DRAFTS': '_drafts',
-    'SITE': 'site'
-}
-
-TEMPLATE_PATH = os.path.join(os.path.abspath(os.getcwd()), DIRS['TEMPLATES'])
-
-JINJA_ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_PATH))
-
+JINJA_LOADER = jinja2.FileSystemLoader([PATHS['cwd'], PATHS['layouts']])
+JINJA_ENV = jinja2.Environment(loader=JINJA_LOADER)
 
 class Post(object):
     """Represents a post."""
-    def __init__(self, path, fname):
-        year, month, day, remainder = fname.split('-', 3)
+    def __init__(self, path_to_file):
+        log.info('Processing post at %s', path_to_file)
+        self.path = path_to_file
+        self.filename = self.path.split('/')[-1]
 
-        d = '{}-{}-{}'.format(year, month, day)
-        self.publish_date = datetime.strptime(d, '%Y-%m-%d')
+        with open(self.path, 'r') as p:
+            p_full = p.read()
 
-        self.site_path = os.path.join(path, DIRS['SITE'])
-        self.file_path = os.path.join(path, DIRS['POSTS'], fname)
+        p_split = p_full.split(FM_SEPARATOR)
+        if len(p_split) == 3:
+            self.config = yaml.safe_load(p_split[1])
+            content_raw = p_split[2].strip()
+        else:
+            self.config = yaml.safe_load(p_split[0])
+            content_raw = p_split[1].strip()
 
-        self.publish_folder = '{}/{}'.format(self.publish_date.year,
-                                             self.publish_date.month)
+        self.content = markdown.markdown(content_raw)
 
-        pub_path = '{}/{}-{}'.format(self.publish_folder, day, remainder)
-        self.publish_path = os.path.join(self.site_path, pub_path)
+    def __getattr__(self, item):
+        """
+        Attempt to find the "missing" attribute in the post's configuration.
+        """
+        if item in self.config:
+            return self.config[item]
+        log.warning('Unable to locate attribute %s', item)
+        return None
 
-        with open(self.file_path, 'r') as f: 
-            file_str = f.read()
-        
-        _, front_matter, content = file_str.split(FM_SEPARATOR)
-        self.front_matter = yaml.load(front_matter)
-        self.content = markdown.markdown(content.strip())
+    def __repr__(self):
+        return u'<Post {}>'.format(self.filename)
 
-        # Process the title differently, in case it has Markdown in it
-        title = self.front_matter.pop('title')
-        self.title = markdown.markdown(title.strip())
-        self.title = self.title.replace('<p>', '').replace('</p>', '')  # ew
+    @property
+    def pub_date(self):
+        year, month, day = map(int, self.filename.split('-', 3)[:3])
+        return datetime.datetime(year=year, month=month, day=day)
 
-        for key, value in self.front_matter.items():
-            if not hasattr(self, key):
-                setattr(self, key, value)
+    @property
+    def slug(self):
+        if 'slug' in self.config:
+            _slug = self.config['slug']
+        else:
+            _slug = '-'.join(self.filename.split('-', 3)[3:]).rsplit('.', 1)[0]
+        return _slug
+
+    @property
+    def html_filename(self):
+        return '{}.html'.format(self.slug)
+
+    @property
+    def permapath(self):
+        dt = self.pub_date
+        return os.path.join(PATHS['site'], str(dt.year),
+                            '{:02d}'.format(dt.month), self.html_filename)
 
     @property
     def permalink(self):
-        return '{}/{}/{}.html'.format(self.publish_date.year,
-                                      self.publish_date.month,
-                                      self.slug)
-
-    @property
-    def filename(self):
-        return '{}.html'.format(self.slug)
-
-    @property
-    def path(self):
-        return os.path.join(self.site_path,
-                            str(self.publish_date.year),
-                            str(self.publish_date.month),
-                            self.filename)
-
-    @property
-    def layout(self):
-        return self.front_matter.get('template')
+        dt = self.pub_date
+        return '/{}/{:02d}/{}'.format(dt.year, dt.month, self.html_filename)
 
 
-class Page(object):
-    """Represents a page."""
-    def __init__(self, path, fname):
-        self.file_path = os.path.join(path, DIRS['PAGES'], fname)
-        self.publish_path = os.path.join(path, DIRS['SITE'])
+def _read_config():
+    """Read the config YAML file (if it exists), and return it as a dict.
 
-        with open(self.file_path, 'r') as f:
-            file_str = f.read()
-
-        _, front_matter, content = file_str.split(FM_SEPARATOR)
-        self.front_matter = yaml.load(front_matter)
-        self.content = markdown.markdown(content.strip())
-
-        # Process the title differently, in case it has Markdown in it
-        title = self.front_matter.pop('title')
-        self.title = markdown.markdown(title.strip())
-        self.title = self.title.replace('<p>', '').replace('</p>', '')  # ew
-
-        for key, value in self.front_matter.items():
-            if not hasattr(self, key):
-                setattr(self, key, value)
-
-    @property
-    def permalink(self):
-        return '{}.html'.format(self.slug)
-
-    @property
-    def filename(self):
-        return '{}.html'.format(self.slug)
-
-    @property
-    def path(self):
-        return os.path.join(self.site_path, self.filename)
-
-    @property
-    def layout(self):
-        return self.front_matter.get('template')
-
-
-def _initialize_site_dir(path):
-    site_path = os.path.join(path, DIRS['SITE'])
-
-    if not os.path.exists(site_path):
-        subprocess.call(['mkdir', site_path])
-
-    static_path = os.path.join(path, DIRS['STATIC'])
-    site_static_path = os.path.join(site_path, 'static')
-    subprocess.call(['cp', '-r', static_path, site_static_path])
-    return site_path, site_static_path
-
-
-def _read_config(path):
-    file_path = os.path.join(path, CONFIG_FILE)
-    with open(file_path, 'r') as f:
-        return yaml.load(f.read())
-
-
-def _sort_posts(path):
-    def is_post_file(p):
-        isfile = os.path.isfile(os.path.join(path, p))
-        valid_filename = len(p.split('-', 3)) == 4
-        return isfile and valid_filename
-
-    posts = [p for p in os.listdir(path) if is_post_file(p)]
-    return reversed(sorted(posts))
-
-
-def _write_perm_page(post, site_path, html):
-    date_folder = os.path.join(site_path, post.publish_folder)
-    if not os.path.exists(date_folder):
-        subprocess.call(['mkdir', '-p', date_folder])
-
-    with open(post.publish_path, 'w') as p:
-        p.write(html)
-
-
-def _write_page(post, site_path, html):
-    page_path = os.path.join(site_path, post.filename)
-    with open(page_path, 'w') as p:
-        p.write(html)
-
-
-def _process_post(post, config, site_path):
-    layout = post.layout or TEMPLATES['POST']
-    tmpl = JINJA_ENV.get_template(layout)
-    html = tmpl.render(site=config, post=post)
-    _write_perm_page(post, site_path, html)
-
-
-def _process_page(post, config, site_path):
-    layout = post.layout or TEMPLATES['PAGE']
-    tmpl = JINJA_ENV.get_template(layout)
-    html = tmpl.render(site=config, post=post)
-    _write_page(post, site_path, html)
-
-
-def _write_collection(path, template, config, posts):
-    tmpl = JINJA_ENV.get_template(template)
-    html = tmpl.render(site=config, posts=posts)
-    with open(os.path.join(path, template), 'w') as index:
-        index.write(html)
-
-
-def init(path):
+    :return dict: the configuration dictionary
     """
-    Initialize the given path with default files and templates.
+    log.info('Reading configuration...')
+    cfg_file = os.path.join(PATHS['cwd'], 'config.yaml')
+    if os.path.isfile(cfg_file):
+        with open(cfg_file, 'r') as cf:
+            return yaml.safe_load(cf.read())
+    else:
+        log.warning('Warning: no configuration file found.')
 
-    :param path: The filesystem path to initialize
-    :return: None
+    return {}
+
+
+def _is_valid_post_file(path):
     """
-    file_path = os.path.join(path, CONFIG_FILE)
-    if not os.path.exists(file_path):
-        subprocess.call(['touch', file_path])
+    Determines if the given path is valid for a post file.
 
-    for d in DIRS.values():
-        dir_path = os.path.join(path, d)
-        if not os.path.exists(dir_path):
-            subprocess.call(['mkdir', dir_path])
+    The criteria:
+        1. The file can't start with an underscore; these are ignored
+        2. The file's name must match the pattern yyyy-mm-dd-*
+        3. The file's extension must be a valid Markdown extension
 
-    for c in TEMPLATES['COLLECTIONS'].values():
-        c_path = os.path.join(path, DIRS['TEMPLATES'], c)
-        if not os.path.exists(c_path):
-            subprocess.call(['touch', c_path])
-
-    t_path = os.path.join(path, DIRS['TEMPLATES'], TEMPLATES['POST'])
-    if not os.path.exists(t_path):
-        subprocess.call(['touch', t_path])
-
-
-def clean(path):
+    :param path: The file path to validate
     """
-    Remove any generated files from the given path.
+    post_pattern = r'^\d{4}-\d{2}-\d{2}-.*'
+    markdown_extenstions = ['md', 'markdown', 'mdown']
 
-    :param path: The path to clean
-    :return: None
-    """
-    site_path = os.path.join(path, DIRS['SITE'])
-    subprocess.call(['rm', '-r', site_path])
+    filename, ext = os.path.basename(path).rsplit('.', 1)
+
+    ignored = not filename.startswith('_')
+    valid_filename = re.match(post_pattern, filename)
+    valid_ext = ext in markdown_extenstions
+
+    return ignored and valid_filename and valid_ext
 
 
-def build(path):
-    """
-    Walk the given path, looking for blog posts and one-off pages, and convert
-    those into a `site` directory that can be uploaded to any web host.
+def _clean():
+    log.info('Cleaning generated files...')
+    site_dir = PATHS['site']
+    if os.path.isdir(site_dir):
+        subprocess.call(['rm', '-r', site_dir])
 
-    :param path: The path to scan and build from
-    :return: None
-    """
-    site_path, static_dir = _initialize_site_dir(path)
-    config = _read_config(path)
 
-    ps = _sort_posts(os.path.join(path, DIRS['POSTS']))
-    posts = [Post(path, fname) for fname in ps]
+@click.group()
+@click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
+@click.pass_context
+def cli(ctx, verbose):
+    if verbose == 1:
+        log.setLevel(logging.INFO)
+
+    if verbose > 1:
+        log.setLevel(logging.DEBUG)
+
+@cli.command()
+@click.pass_context
+def init(ctx):
+    """Initialize the current directory."""
+    for d in [PATHS['posts'], PATHS['templates']]:
+        log.debug('Creating directory %s' % d)
+        if not os.path.isdir(d):
+            subprocess.call(['mkdir', d])
+
+
+@cli.command()
+@click.pass_context
+def clean(ctx):
+    """Clean any generated files."""
+    _clean()
+
+
+@cli.command()
+@click.pass_context
+def build(ctx):
+    """Start a build of the site."""
+    _clean()
+    config = _read_config()
+
+    if not os.path.isdir(PATHS['site']):
+        log.debug('Creating site directory...')
+        subprocess.call(['mkdir', PATHS['site']])
+
+    log.info('Processing posts...')
+    ls = os.listdir(PATHS['posts'])
+    post_path = lambda path: os.path.join(PATHS['posts'], path)
+    posts = [Post(post_path(p)) for p in ls if _is_valid_post_file(p)]
+
     for post in posts:
-        _process_post(post, config, site_path)
+        log.debug('Rendering template for post %s', post.path)
+        template = JINJA_ENV.get_template(post.layout or 'article.html')
+        html = template.render(site=config, post=post)
 
-    pgs = os.listdir(os.path.join(path, DIRS['PAGES']))
-    pages = [Page(path, fname) for fname in pgs]
-    for page in pages:
-        _process_page(page, config, site_path)
+        post_dir = os.path.dirname(post.permapath)
+        if not os.path.isdir(post_dir):
+            log.debug('Creating post directory %s', post_dir)
+            subprocess.call(['mkdir', '-p', post_dir])
 
-    for t in TEMPLATES['COLLECTIONS'].values():
-        _write_collection(site_path, t, config, posts)
+        log.debug('Writing post to %s', post.permapath)
+        with open(post.permapath, 'w') as pout:
+            pout.write(html)
 
+    log.info('Processing non-post files...')
+    for dirpath, subdirs, files in os.walk(PATHS['cwd']):
+        subdirs[:] = [d for d in subdirs if not d.startswith('_')]
+        files[:] = [f for f in files if f.endswith('.html') or f.endswith('.xml')]
+        rel_path = dirpath.replace(PATHS['cwd'], '').strip('/')
 
-def main():
-    """
-    The entry point for using `nanogen` via the command line.
+        for f in files:
+            log.debug('Processing %s', f)
+            template = JINJA_ENV.get_template(f)
+            html = template.render(site=config, posts=posts)
 
-    :return: None
-    """
-    args = docopt.docopt(__doc__, version=__version__)
-    p = os.getcwd() if args['PATH'] is None else args['PATH']
-    path = os.path.abspath(p)
+            file_dir = os.path.join(PATHS['site'], rel_path)
 
-    try:
-        if args['init']:
-            init(path)
+            if not os.path.isdir(file_dir):
+                log.debug('Creating directory %s', file_dir)
+                subprocess.call(['mkdir', '-p', os.path.dirname(file_dir)])
 
-        if args['clean']:
-            clean(path)
+            file_path = os.path.join(file_dir, f)
+            log.debug('Writing %s to %s', f, file_path)
+            with open(file_path, 'w') as pout:
+                pout.write(html)
 
-        if args['build']:
-            build(path)
-    except Exception as e:
-        print('Error: {}'.format(e))
-        sys.exit(1)
+        if rel_path in config.get('keep', []):
+            log.debug('Keeping directory %s', rel_path)
+            subdirs[:] = []
+
+            file_dir = os.path.join(PATHS['site'], rel_path)
+
+            if not os.path.isdir(file_dir):
+                log.debug('Creating directory %s', file_dir)
+                subprocess.call(['mkdir', '-p', file_dir])
+
+            copy_path = os.path.join(PATHS['site'], rel_path)
+            log.debug('Recursively copying %s to %s', dirpath, copy_path)
+            subprocess.call(['cp', '-r', dirpath, PATHS['site']])
+
+    click.secho('Done.', fg='green')

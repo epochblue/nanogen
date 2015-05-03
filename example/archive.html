@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site.title }} - Archives{% endblock %}
+
+{% block content %}
+    <h2>Archive</h2>
+
+    <div class="archive-posts">
+    {% for post in posts %}
+        <div class="archive-post">
+            <span class="archive-pubdate">{{ post.pub_date.strftime('%b %d, %Y') }}</span>
+            <a href="{{ post.permalink }}">{{ post.title }}</a>
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}

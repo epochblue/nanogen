@@ -1,0 +1,14 @@
+<!doctype html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}{{ site.title }}{% endblock %}</title>
+    <link href="static/example.css" type="text/css" rel="stylesheet">
+</head>
+<body>
+    <h1><a href="{{site.url}}">{{ site.title }}</a></h1>
+
+    <div class="container">
+    {% block content %}
+    {% endblock %}
+    </div>
+</body>
