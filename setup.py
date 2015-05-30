@@ -1,21 +1,26 @@
 from setuptools import setup
-
-with open("requirements.txt") as f:
-    requires = [l for l in f.read().splitlines() if l]
+from nanogen import __version__
 
 entry_points = {
-    'console_scripts': ['nanogen = cli:cli']
+    'console_scripts': ['nanogen = nanogen:cli']
 }
 
 setup(name='nanogen',
-      version='0.4.0',
+      version=__version__,
       description='A very small static site generator',
       author='Bill Israel',
       author_email='bill.israel@gmail.com',
       license='MIT',
       url='https://github.com/epochblue/nanogen',
       py_modules=['nanogen'],
-      install_requires=requires,
+      install_requires=[
+          'click==4.0',
+          'mistune==0.5.1',
+          'Jinja2==2.7.3',
+          'MarkupSafe==0.23',
+          'Pygments==2.0.2',
+          'PyYAML==3.11'
+      ],
       entry_points=entry_points,
       keywords=['ssg', 'generator', 'static site generator', 'blog'],
       classifiers=[

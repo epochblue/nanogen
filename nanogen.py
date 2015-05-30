@@ -10,13 +10,12 @@ import subprocess
 import yaml
 import click
 import jinja2
-import markdown
+import renderer
 
 from logger import log
 
 
-__all__ = ['cli']
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
 
 PATHS = {
@@ -35,6 +34,7 @@ class Post(object):
     """Represents a post."""
     def __init__(self, path_to_file):
         log.info('Processing post at %s', path_to_file)
+        self.markdown = renderer.markdown
         self.path = path_to_file
         self.filename = self.path.split('/')[-1]
 
@@ -49,7 +49,7 @@ class Post(object):
             self.config = yaml.safe_load(p_split[0])
             content_raw = p_split[1].strip()
 
-        self.content = markdown.markdown(content_raw)
+        self.content = self.markdown(content_raw)
 
     def __getattr__(self, item):
         """
