@@ -149,13 +149,13 @@ keep: [static, css, js]
 
 None of the fields in `config.yaml` are required, but anything defined will be
 passed to all templates. In the templates, anything defined in this file will be
-available under a special variable called `site`. For example, to reference the
-`url` variable in the above example in a template, use`{{ site.url }}` in your
-template.
+available under a special variable called `site`. For example, to use the `url`
+variable from the above example, use`{{ site.url }}` in your template.
 
-`keep` is the only field in the file that is explicitly looked for by `nanogen`.
-It expects a [YAML][] list of directories (relative to the project's root
-dir) of directories that need to be copied into the generated site.
+`keep` is the only key in the configuration file that `nanogen` explicitly looks
+for. If it's found, `nanogen` expects it to be a [YAML][] list of directories
+(relative to the project's root dir) that need to be copied into the generated
+site structure.
 
 
 ## Templates
@@ -177,7 +177,7 @@ generators. If you'd like this functionality, you can use a tool like
 [Watchman][] or simply run `build` in an infinite loop. The following example
 will run a build every second:
 
-    $> while [ 1 ]; do nanogen build; sleep 1; done
+        $> while [ 1 ]; do nanogen build; sleep 1; done
 
 
 ## License
