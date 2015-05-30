@@ -4,92 +4,18 @@ nanogen - a very small static site generator
 import os
 import re
 import logging
-import datetime
 import subprocess
 
 import yaml
 import click
 import jinja2
-import renderer
 
 from logger import log
-
-
-__version__ = '0.6.0'
-__author__ = 'Bill Israel <bill.israel@gmail.com>'
-
-PATHS = {
-    'cwd': os.getcwd(),
-    'site': os.path.join(os.getcwd(), '_site'),
-    'posts': os.path.join(os.getcwd(), '_posts'),
-    'layouts': os.path.join(os.getcwd(), '_layouts'),
-}
-
-FM_SEPARATOR = '----'
+from .models import Post
+from . import PATHS
 
 JINJA_LOADER = jinja2.FileSystemLoader([PATHS['cwd'], PATHS['layouts']])
 JINJA_ENV = jinja2.Environment(loader=JINJA_LOADER)
-
-class Post(object):
-    """Represents a post."""
-    def __init__(self, path_to_file):
-        log.info('Processing post at %s', path_to_file)
-        self.markdown = renderer.markdown
-        self.path = path_to_file
-        self.filename = self.path.split('/')[-1]
-
-        with open(self.path, 'r') as p:
-            p_full = p.read()
-
-        p_split = p_full.split(FM_SEPARATOR)
-        if len(p_split) == 3:
-            self.config = yaml.safe_load(p_split[1])
-            content_raw = p_split[2].strip()
-        else:
-            self.config = yaml.safe_load(p_split[0])
-            content_raw = p_split[1].strip()
-
-        self.content = self.markdown(content_raw)
-
-    def __getattr__(self, item):
-        """
-        Attempt to find the "missing" attribute in the post's configuration.
-        """
-        if item in self.config:
-            return self.config[item]
-        log.warning('Unable to locate attribute %s', item)
-        return None
-
-    def __repr__(self):
-        return u'<Post {}>'.format(self.filename)
-
-    @property
-    def pub_date(self):
-        year, month, day = map(int, self.filename.split('-', 3)[:3])
-        return datetime.datetime(year=year, month=month, day=day)
-
-    @property
-    def slug(self):
-        if 'slug' in self.config:
-            _slug = self.config['slug']
-        else:
-            _slug = '-'.join(self.filename.split('-', 3)[3:]).rsplit('.', 1)[0]
-        return _slug
-
-    @property
-    def html_filename(self):
-        return '{}.html'.format(self.slug)
-
-    @property
-    def permapath(self):
-        dt = self.pub_date
-        return os.path.join(PATHS['site'], str(dt.year),
-                            '{:02d}'.format(dt.month), self.html_filename)
-
-    @property
-    def permalink(self):
-        dt = self.pub_date
-        return '/{}/{:02d}/{}'.format(dt.year, dt.month, self.html_filename)
 
 
 def _read_config():
@@ -101,7 +27,9 @@ def _read_config():
     cfg_file = os.path.join(PATHS['cwd'], 'config.yaml')
     if os.path.isfile(cfg_file):
         with open(cfg_file, 'r') as cf:
-            return yaml.safe_load(cf.read())
+            config = yaml.safe_load(cf.read())
+            log.debug('Site-wide configuration: %s', config)
+            return config
     else:
         log.warning('Warning: no configuration file found.')
 
@@ -186,6 +114,7 @@ def build(ctx):
         template = JINJA_ENV.get_template(post.layout or 'article.html')
         html = template.render(site=config, post=post)
 
+        log.debug('Writing post to disk: %s', post)
         post_dir = os.path.dirname(post.permapath)
         if not os.path.isdir(post_dir):
             log.debug('Creating post directory %s', post_dir)

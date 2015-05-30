@@ -2,7 +2,7 @@ from setuptools import setup
 from nanogen import __version__
 
 entry_points = {
-    'console_scripts': ['nanogen = nanogen:cli']
+    'console_scripts': ['nanogen = nanogen.nanogen:cli']
 }
 
 setup(name='nanogen',
@@ -12,7 +12,7 @@ setup(name='nanogen',
       author_email='bill.israel@gmail.com',
       license='MIT',
       url='https://github.com/epochblue/nanogen',
-      py_modules=['nanogen'],
+      packages=['nanogen'],
       install_requires=[
           'click==4.0',
           'mistune==0.5.1',
