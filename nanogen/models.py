@@ -41,7 +41,7 @@ class Post(object):
         return None
 
     def __repr__(self):
-        return u'<Post {}>'.format(self.path)
+        return u'Post(path={})'.format(self.path)
 
     @property
     def pub_date(self):
