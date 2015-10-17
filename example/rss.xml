@@ -7,14 +7,13 @@
 
         {% for post in posts[:10] %}
         <item>
-            <guid>{{ post.pub_date.strftime('%Y%m%d') }}-{{ post.slug }}</guid>
-            <author>{{ site.author }}</author>
+            <guid isPermaLink="false">{{ post.permalink }}</guid>
             <title>{{ post.title }}</title>
-            <pubDate>{{ post.pub_date.strftime('%c -0000 UTC') }}</pubDate>
-            <link>{{ post.permalink }}</link>
+            <pubDate>{{ post.pub_date.strftime('%a, %d %b %Y %H:%M:%S -0000') }}</pubDate>
+            <link>{{ site.url }}{{ post.permalink }}</link>
             <description>
-                {{ post.content }}
-            <description>
+                {{ post.content|escape }}
+            </description>
         </item>
         {% endfor %}
     </channel>
