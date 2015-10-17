@@ -66,38 +66,7 @@ def _clean():
         subprocess.call(['rm', '-r', site_dir])
 
 
-@click.group()
-@click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
-@click.pass_context
-def cli(ctx, verbose):
-    if verbose == 1:
-        log.setLevel(logging.INFO)
-
-    if verbose > 1:
-        log.setLevel(logging.DEBUG)
-
-@cli.command()
-@click.pass_context
-def init(ctx):
-    """Initialize the current directory."""
-    for d in [PATHS['posts'], PATHS['templates']]:
-        log.debug('Creating directory %s' % d)
-        if not os.path.isdir(d):
-            subprocess.call(['mkdir', d])
-
-
-@cli.command()
-@click.pass_context
-def clean(ctx):
-    """Clean any generated files."""
-    _clean()
-
-
-@cli.command()
-@click.pass_context
-def build(ctx):
-    """Start a build of the site."""
-    _clean()
+def _build():
     config = _read_config()
 
     if not os.path.isdir(PATHS['site']):
@@ -126,7 +95,8 @@ def build(ctx):
 
     log.info('Processing non-post files...')
     for dirpath, subdirs, files in os.walk(PATHS['cwd']):
-        subdirs[:] = [d for d in subdirs if not d.startswith('_')]
+        log.debug('Walking {}...'.format(dirpath))
+        subdirs[:] = [d for d in subdirs if not d[0] in ['_', '.']]
         files[:] = [f for f in files if f.endswith('.html') or f.endswith('.xml')]
         rel_path = dirpath.replace(PATHS['cwd'], '').strip('/')
 
@@ -160,4 +130,67 @@ def build(ctx):
             log.debug('Recursively copying %s to %s', dirpath, copy_path)
             subprocess.call(['cp', '-r', dirpath, PATHS['site']])
 
+
+@click.group()
+@click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
+@click.pass_context
+def cli(ctx, verbose):
+    if verbose == 1:
+        log.setLevel(logging.INFO)
+
+    if verbose > 1:
+        log.setLevel(logging.DEBUG)
+
+@cli.command()
+@click.pass_context
+def init(ctx):
+    """Initialize the current directory."""
+    for d in [PATHS['posts'], PATHS['templates']]:
+        log.debug('Creating directory %s' % d)
+        if not os.path.isdir(d):
+            subprocess.call(['mkdir', d])
+
+
+@cli.command()
+@click.pass_context
+def clean(ctx):
+    """Clean any generated files."""
+    _clean()
+
+
+@cli.command()
+@click.pass_context
+def build(ctx):
+    """Start a build of the site."""
+    _clean()
+    _build()
+
     click.secho('Done.', fg='green')
+
+@cli.command()
+@click.option('-h', '--host', default='localhost', help='The hostname to serve on')
+@click.option('-p', '--port', default=8080, type=int, help='The port to serve on')
+@click.pass_context
+def preview(ctx, host, port):
+    """Serve a preview of the site on the given host and port."""
+    try:
+        import SimpleHTTPServer, BaseHTTPServer
+        handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+        handler.protocol_version = 'HTTP/1.0'
+        httpd = BaseHTTPServer.HTTPServer((host, 8080), handler)
+    except ImportError:
+        import http.server
+        handler = http.server.SimpleHTTPRequestHandler
+        handler.protocol_version = 'HTTP/1.0'
+        httpd = http.server.HTTPServer(host, 8080, handler)
+
+    root = PATHS['site']
+    os.chdir(root)
+
+    try:
+        click.secho('Serving your site on http://{host}:{port}/...'.format(host=host, port=port))
+        click.secho('Press <Ctrl-C> to stop the server.\n')
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        click.secho('\nShutting down sever.')
+        httpd.server_close()
