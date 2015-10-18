@@ -3,7 +3,6 @@ nanogen - a very small static site generator
 """
 import os
 import re
-import logging
 import datetime
 import subprocess
 
@@ -11,7 +10,7 @@ import yaml
 import click
 import jinja2
 
-from logger import log
+from .logger import log, init_logger
 from .models import Post
 from . import PATHS, slugify
 
@@ -136,11 +135,7 @@ def _build():
 @click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
 @click.pass_context
 def cli(ctx, verbose):
-    if verbose == 1:
-        log.setLevel(logging.INFO)
-
-    if verbose > 1:
-        log.setLevel(logging.DEBUG)
+    init_logger(verbose)
 
 
 @cli.command()
