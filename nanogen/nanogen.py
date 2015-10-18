@@ -172,7 +172,7 @@ def build(ctx):
 @click.option('-p', '--port', default=8080, type=int, help='The port to serve on')
 @click.pass_context
 def preview(ctx, host, port):
-    """Serve a preview of the site on the given host and port."""
+    """Serve a preview of the site on HOST and PORT."""
     try:
         import SimpleHTTPServer, BaseHTTPServer
         handler = SimpleHTTPServer.SimpleHTTPRequestHandler
