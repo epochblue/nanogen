@@ -2,9 +2,9 @@
 
 A very small static site generator written in Python.
 
-## Installation
+![Latest PyPI version](https://img.shields.io/pypi/v/nanogen.svg)
 
-**Note**: `nanogen` is not yet available via `pip`, though it will be.
+## Installation
 
 The best way to install `nanogen` is through `pip`:
 
