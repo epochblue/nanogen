@@ -4,6 +4,7 @@ nanogen - a very small static site generator
 import os
 import re
 import logging
+import datetime
 import subprocess
 
 import yaml
@@ -12,7 +13,7 @@ import jinja2
 
 from logger import log
 from .models import Post
-from . import PATHS
+from . import PATHS, slugify
 
 JINJA_LOADER = jinja2.FileSystemLoader([PATHS['cwd'], PATHS['layouts']])
 JINJA_ENV = jinja2.Environment(loader=JINJA_LOADER)
@@ -141,6 +142,7 @@ def cli(ctx, verbose):
     if verbose > 1:
         log.setLevel(logging.DEBUG)
 
+
 @cli.command()
 @click.pass_context
 def init(ctx):
@@ -166,6 +168,7 @@ def build(ctx):
     _build()
 
     click.secho('Done.', fg='green')
+
 
 @cli.command()
 @click.option('-h', '--host', default='localhost', help='The hostname to serve on')
@@ -194,3 +197,36 @@ def preview(ctx, host, port):
     except KeyboardInterrupt:
         click.secho('\nShutting down sever.')
         httpd.server_close()
+
+
+@cli.command()
+@click.argument('title')
+@click.option('-l', '--layout', default='article.html', help='The layout template the post will use')
+@click.pass_context
+def new(ctx, title, layout):
+    """Create a new post with the given title"""
+    date = datetime.datetime.now().strftime('%Y-%m-%d')
+    slug = slugify(title)
+    filename = '{}-{}.md'.format(date, slug)
+    full_path = os.path.join(PATHS['posts'], filename)
+
+    if not layout.endswith('.html'):
+        layout += '.html'
+
+    if not os.path.isfile(full_path):
+        with open(full_path, 'w') as f:
+            text = """----
+title: {title}
+slug: {slug}
+layout: {layout}
+----
+
+Your post content goes here.
+            """.format(title=title, slug=slug, layout=layout)
+            f.write(text)
+
+        log.info('Created {file}'.format(file=full_path))
+        click.secho("Created {file}".format(file=full_path), fg='green')
+    else:
+        log.error('A post with that date and title already exists')
+        raise click.ClickException('A post with that date and title already exists')

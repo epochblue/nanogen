@@ -1,4 +1,5 @@
 import os
+import re
 
 __version__ = '0.7.2'
 
@@ -8,3 +9,8 @@ PATHS = {
     'posts': os.path.join(os.getcwd(), '_posts'),
     'layouts': os.path.join(os.getcwd(), '_layouts'),
 }
+
+
+def slugify(text):
+    """Create a suitable slug for the given text"""
+    return re.sub(r'\W', '-', text).lower()
