@@ -1,3 +1,4 @@
+import os
 from setuptools import setup
 from nanogen import __version__
 
@@ -5,18 +6,26 @@ entry_points = {
     'console_scripts': ['nanogen = nanogen.nanogen:cli']
 }
 
+long_description = open(
+    os.path.join(
+        os.path.dirname(__file__),
+        'README.md'
+    )
+).read()
+
 setup(name='nanogen',
       version=__version__,
       description='A very small static site generator',
+      long_description=long_description,
       author='Bill Israel',
       author_email='bill.israel@gmail.com',
       license='MIT',
       url='https://github.com/epochblue/nanogen',
       packages=['nanogen'],
       install_requires=[
-          'click==4.0',
-          'mistune==0.5.1',
-          'Jinja2==2.7.3',
+          'click==5.1',
+          'mistune==0.7.1',
+          'Jinja2==2.8',
           'MarkupSafe==0.23',
           'Pygments==2.0.2',
           'PyYAML==3.11'
