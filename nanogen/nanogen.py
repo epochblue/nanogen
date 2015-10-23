@@ -12,6 +12,7 @@ import jinja2
 
 import logger
 import renderer
+from . import __version__
 
 
 FM_SEPARATOR = '----'
@@ -209,6 +210,7 @@ def _build():
 
 @click.group()
 @click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
+@click.version_option(version=__version__)
 @click.pass_context
 def cli(ctx, verbose):
     logger.init_logger(verbose)
