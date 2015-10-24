@@ -10,9 +10,7 @@ import yaml
 import click
 import jinja2
 
-import logger
-import renderer
-from . import __version__
+from . import __version__, logger, renderer
 
 
 FM_SEPARATOR = '----'
