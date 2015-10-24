@@ -238,8 +238,6 @@ def build(ctx):
     _clean()
     _build()
 
-    click.secho('Done.', fg='green')
-
 
 @cli.command()
 @click.option('-h', '--host', default='localhost', help='The hostname to serve on')
@@ -266,7 +264,6 @@ def preview(ctx, host, port):
         click.secho('Press <Ctrl-C> to stop the server.\n')
         httpd.serve_forever()
     except KeyboardInterrupt:
-        click.secho('\nShutting down sever.')
         httpd.server_close()
 
 
