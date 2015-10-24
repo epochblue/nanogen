@@ -79,8 +79,9 @@ dictum. Aliquam vehicula tellus nec velit porttitor aliquet.
 
     p = Post(path)
 
-    assert p.slug == 'test-post'
+    assert p.bunk_option is None
     assert p.layout is None
+    assert p.slug == 'test-post'
     assert p.pub_date == datetime.datetime(year=2015, month=10, day=22)
     assert p.html_filename == 'test-post.html'
     assert p.permapath == os.path.join(os.getcwd(), '_site', '2015', '10', 'test-post.html')
