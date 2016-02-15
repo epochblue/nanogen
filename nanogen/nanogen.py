@@ -7,10 +7,10 @@ import datetime
 import subprocess
 
 import yaml
-import click
 import jinja2
 
-from . import __version__, logger, renderer
+import logger
+import renderer
 
 
 FM_SEPARATOR = '----'
@@ -23,13 +23,22 @@ PATHS = {
 
 JINJA_LOADER = jinja2.FileSystemLoader([PATHS['cwd'], PATHS['layouts']])
 JINJA_ENV = jinja2.Environment(loader=JINJA_LOADER)
+DEFAULT_POST = """
+----
+title: {title}
+slug: {slug}
+layout: {layout}
+----
+
+Your post content goes here.
+""".strip()
 
 
 class Post(object):
     """Represents a post."""
 
     def __init__(self, path_to_file):
-        logger.log.info('Processing post at %s', path_to_file)
+        logger.log.debug('Processing post at %s', path_to_file)
         self.markdown = renderer.markdown
         self.path = path_to_file
         self.filename = self.path.split('/')[-1]
@@ -98,7 +107,7 @@ def _read_config():
 
     :return dict: the configuration dictionary
     """
-    logger.log.info('Reading configuration...')
+    logger.log.debug('Reading configuration...')
     cfg_file = os.path.join(PATHS['cwd'], 'config.yaml')
     if os.path.isfile(cfg_file):
         with open(cfg_file, 'r') as cf:
@@ -134,24 +143,16 @@ def _is_valid_post_file(path):
     return ignored and valid_filename and valid_ext
 
 
-def _clean():
-    logger.log.info('Cleaning generated files...')
-    site_dir = PATHS['site']
-    if os.path.isdir(site_dir):
-        subprocess.call(['rm', '-r', site_dir])
-
-
-def _build():
-    config = _read_config()
-
-    if not os.path.isdir(PATHS['site']):
-        logger.log.debug('Creating site directory...')
-        subprocess.call(['mkdir', PATHS['site']])
-
-    logger.log.info('Processing posts...')
+def _get_posts():
     ls = os.listdir(PATHS['posts'])
     post_path = lambda path: os.path.join(PATHS['posts'], path)
     posts = [Post(post_path(p)) for p in ls if _is_valid_post_file(p)]
+    return posts
+
+
+def _process_posts(config):
+    logger.log.debug('Processing posts...')
+    posts = _get_posts()
 
     for post in posts:
         logger.log.debug('Rendering template for post %s', post.path)
@@ -168,11 +169,16 @@ def _build():
         with open(post.permapath, 'w') as pout:
             pout.write(html)
 
-    logger.log.info('Processing non-post files...')
+
+def _process_pages(config):
+    logger.log.debug('Processing non-post files...')
+    posts = _get_posts()
+
     for dirpath, subdirs, files in os.walk(PATHS['cwd']):
         logger.log.debug('Walking {}...'.format(dirpath))
         subdirs[:] = [d for d in subdirs if not d[0] in ['_', '.']]
-        files[:] = [f for f in files if f.endswith('.html') or f.endswith('.xml')]
+        files[:] = [f for f in files if
+                    f.endswith('.html') or f.endswith('.xml')]
         rel_path = dirpath.replace(PATHS['cwd'], '').strip('/')
 
         for f in files:
@@ -184,13 +190,15 @@ def _build():
 
             if not os.path.isdir(file_dir):
                 logger.log.debug('Creating directory %s', file_dir)
-                subprocess.call(['mkdir', '-p', os.path.dirname(file_dir)])
+                subprocess.call(
+                        ['mkdir', '-p', os.path.dirname(file_dir)])
 
             file_path = os.path.join(file_dir, f)
             logger.log.debug('Writing %s to %s', f, file_path)
             with open(file_path, 'w') as pout:
                 pout.write(html)
 
+        # Process any directories or files the user specified that we keep
         if rel_path in config.get('keep', []):
             logger.log.debug('Keeping directory %s', rel_path)
             subdirs[:] = []
@@ -206,73 +214,40 @@ def _build():
             subprocess.call(['cp', '-r', dirpath, PATHS['site']])
 
 
-@click.group()
-@click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
-@click.version_option(version=__version__)
-@click.pass_context
-def cli(ctx, verbose):
-    logger.init_logger(verbose)
+def build():
+    config = _read_config()
+
+    if not os.path.isdir(PATHS['site']):
+        logger.log.debug('Creating site directory...')
+        subprocess.call(['mkdir', PATHS['site']])
+
+    _process_posts(config)
+    _process_pages(config)
 
 
-@cli.command()
-@click.pass_context
-def init(ctx):
-    """Initialize the current directory."""
+def init():
+    """
+
+    :return:
+    """
     for d in [PATHS['posts'], PATHS['templates']]:
         logger.log.debug('Creating directory %s' % d)
         if not os.path.isdir(d):
             subprocess.call(['mkdir', d])
 
 
-@cli.command()
-@click.pass_context
-def clean(ctx):
-    """Clean any generated files."""
-    _clean()
+def clean():
+    """
+
+    :return:
+    """
+    logger.log.info('Cleaning generated files...')
+    site_dir = PATHS['site']
+    if os.path.isdir(site_dir):
+        subprocess.call(['rm', '-r', site_dir])
 
 
-@cli.command()
-@click.pass_context
-def build(ctx):
-    """Start a build of the site."""
-    _clean()
-    _build()
-
-
-@cli.command()
-@click.option('-h', '--host', default='localhost', help='The hostname to serve on')
-@click.option('-p', '--port', default=8080, type=int, help='The port to serve on')
-@click.pass_context
-def preview(ctx, host, port):
-    """Serve a preview of the site on HOST and PORT."""
-    try:
-        import SimpleHTTPServer, BaseHTTPServer
-        handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-        handler.protocol_version = 'HTTP/1.0'
-        httpd = BaseHTTPServer.HTTPServer((host, 8080), handler)
-    except ImportError:
-        import http.server
-        handler = http.server.SimpleHTTPRequestHandler
-        handler.protocol_version = 'HTTP/1.0'
-        httpd = http.server.HTTPServer(host, 8080, handler)
-
-    root = PATHS['site']
-    os.chdir(root)
-
-    try:
-        click.secho('Serving your site on http://{host}:{port}/...'.format(host=host, port=port))
-        click.secho('Press <Ctrl-C> to stop the server.\n')
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        httpd.server_close()
-
-
-@cli.command()
-@click.argument('title')
-@click.option('-l', '--layout', default='article.html', help='The layout template the post will use')
-@click.pass_context
-def new(ctx, title, layout):
-    """Create a new post with the given title"""
+def new(title, layout):
     date = datetime.datetime.now().strftime('%Y-%m-%d')
     slug = _slugify(title)
     filename = '{}-{}.md'.format(date, slug)
@@ -283,18 +258,8 @@ def new(ctx, title, layout):
 
     if not os.path.isfile(full_path):
         with open(full_path, 'w') as f:
-            text = """----
-title: {title}
-slug: {slug}
-layout: {layout}
-----
-
-Your post content goes here.
-            """.format(title=title, slug=slug, layout=layout)
+            text = DEFAULT_POST.format(title=title, slug=slug, layout=layout)
             f.write(text)
-
         logger.log.info('Created {file}'.format(file=full_path))
-        click.secho("Created {file}".format(file=full_path), fg='green')
     else:
-        logger.log.error('A post with that date and title already exists')
-        raise click.ClickException('A post with that date and title already exists')
+        raise ValueError('A post with that date and title already exists')

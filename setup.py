@@ -3,7 +3,7 @@ from setuptools import setup
 from nanogen import __version__
 
 entry_points = {
-    'console_scripts': ['nanogen = nanogen.nanogen:cli']
+    'console_scripts': ['nanogen = nanogen.cli:cli']
 }
 
 long_description = open(

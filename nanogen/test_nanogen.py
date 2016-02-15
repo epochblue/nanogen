@@ -2,7 +2,7 @@ import os
 import tempfile
 import datetime
 
-from .nanogen import _slugify, _is_valid_post_file, Post
+from nanogen import _slugify, _is_valid_post_file, Post
 
 
 def test_slugify():

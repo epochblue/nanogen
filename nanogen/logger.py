@@ -1,7 +1,7 @@
 import logging
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.ERROR)
+log.setLevel(logging.INFO)
 
 
 def init_logger(verbosity):
@@ -17,9 +17,7 @@ def init_logger(verbosity):
         log.addHandler(stdout_log_handler)
         stdout_log_handler.setFormatter(formatter)
 
-        if verbosity == 1:
-            log.setLevel(logging.INFO)
-        elif verbosity > 1:
+        if verbosity:
             log.setLevel(logging.DEBUG)
 
 
