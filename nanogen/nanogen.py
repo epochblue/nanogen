@@ -132,13 +132,13 @@ def _is_valid_post_file(path):
     :param path: The file path to validate
     """
     post_pattern = r'^\d{4}-\d{2}-\d{2}-.*'
-    markdown_extenstions = ['md', 'markdown', 'mdown']
+    markdown_extensions = ['md', 'markdown', 'mdown']
 
     filename, ext = os.path.basename(path).rsplit('.', 1)
 
     ignored = not filename.startswith('_')
     valid_filename = re.match(post_pattern, filename)
-    valid_ext = ext in markdown_extenstions
+    valid_ext = ext in markdown_extensions
 
     return ignored and valid_filename and valid_ext
 
@@ -196,8 +196,7 @@ def _process_pages(config):
     for dirpath, subdirs, files in os.walk(PATHS['cwd']):
         logger.log.debug('Walking {}...'.format(dirpath))
         subdirs[:] = [d for d in subdirs if not d[0] in ['_', '.']]
-        files[:] = [f for f in files if
-                    f.endswith('.html') or f.endswith('.xml')]
+        files[:] = [f for f in files if f.endswith('.html') or f.endswith('.xml')]
         rel_path = dirpath.replace(PATHS['cwd'], '').strip('/')
 
         for f in files:
@@ -209,8 +208,7 @@ def _process_pages(config):
 
             if not os.path.isdir(file_dir):
                 logger.log.debug('Creating directory %s', file_dir)
-                subprocess.call(
-                        ['mkdir', '-p', os.path.dirname(file_dir)])
+                subprocess.call(['mkdir', '-p', os.path.dirname(file_dir)])
 
             file_path = os.path.join(file_dir, f)
             logger.log.debug('Writing %s to %s', f, file_path)

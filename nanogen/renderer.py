@@ -3,6 +3,7 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters.html import HtmlFormatter
 
+
 class NanogenRenderer(mistune.Renderer):
     def block_code(self, code, lang=None):
         if lang is None:
