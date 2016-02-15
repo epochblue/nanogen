@@ -144,6 +144,11 @@ def _is_valid_post_file(path):
 
 
 def _get_posts():
+    """
+    Finds valid post files within the posts directory.
+
+    :return: None
+    """
     ls = os.listdir(PATHS['posts'])
     post_path = lambda path: os.path.join(PATHS['posts'], path)
     posts = [Post(post_path(p)) for p in ls if _is_valid_post_file(p)]
@@ -151,6 +156,13 @@ def _get_posts():
 
 
 def _process_posts(config):
+    """
+    Looks for valid post files to process and processes them.
+
+    :param config: The configuration to use when processing files.
+    :type config: dict
+    :return: None
+    """
     logger.log.debug('Processing posts...')
     posts = _get_posts()
 
@@ -171,6 +183,13 @@ def _process_posts(config):
 
 
 def _process_pages(config):
+    """
+    Looks for non-post files to process and processes them.
+
+    :param config: The configuration to use when processing files.
+    :type config: dict
+    :return: None
+    """
     logger.log.debug('Processing non-post files...')
     posts = _get_posts()
 
@@ -214,7 +233,28 @@ def _process_pages(config):
             subprocess.call(['cp', '-r', dirpath, PATHS['site']])
 
 
+def get_site_dir():
+    return PATHS['site']
+
+
+def init():
+    """
+    Initialize the current directory for a nanogen-based site.
+
+    :return: None
+    """
+    for d in [PATHS['posts'], PATHS['templates']]:
+        logger.log.debug('Creating directory %s' % d)
+        if not os.path.isdir(d):
+            subprocess.call(['mkdir', d])
+
+
 def build():
+    """
+    Generate the site. Will create the _site dir if one doesn't already exist.
+
+    :return: None
+    """
     config = _read_config()
 
     if not os.path.isdir(PATHS['site']):
@@ -225,21 +265,11 @@ def build():
     _process_pages(config)
 
 
-def init():
-    """
-
-    :return:
-    """
-    for d in [PATHS['posts'], PATHS['templates']]:
-        logger.log.debug('Creating directory %s' % d)
-        if not os.path.isdir(d):
-            subprocess.call(['mkdir', d])
-
-
 def clean():
     """
+    Removes all generated nanogen files.
 
-    :return:
+    :return: None
     """
     logger.log.info('Cleaning generated files...')
     site_dir = PATHS['site']
@@ -248,6 +278,16 @@ def clean():
 
 
 def new(title, layout):
+    """
+    Creates a new post for the site.
+
+    :param title: What to use as the title for this post
+    :type title: string
+    :param layout: Which layout to use for this post
+    :type layout: string
+    :raises: ValueError if this post already exists
+    :return: None
+    """
     date = datetime.datetime.now().strftime('%Y-%m-%d')
     slug = _slugify(title)
     filename = '{}-{}.md'.format(date, slug)

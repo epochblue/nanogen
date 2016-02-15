@@ -55,7 +55,7 @@ def new(ctx, title, layout):
 @click.pass_context
 def preview(ctx, host, port):
     """Serve a preview of the site on HOST and PORT."""
-    site_dir = os.path.join(os.getcwd(), '_site')
+    site_dir = nanogen.get_site_dir()
     if not os.path.isdir(site_dir):
         click.ClickException('Unable to locate _site directory. Did you forget to run `nanogen build`?')
 
