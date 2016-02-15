@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+
 import os
 import tempfile
 import datetime
 
-from nanogen import _slugify, _is_valid_post_file, Post
+from nanogen.nanogen import _slugify, _is_valid_post_file, Post
 
 
 def test_slugify():

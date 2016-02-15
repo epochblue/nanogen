@@ -1,6 +1,8 @@
 """
 nanogen - a very small static site generator
 """
+from __future__ import absolute_import
+
 import os
 import re
 import datetime
@@ -9,8 +11,7 @@ import subprocess
 import yaml
 import jinja2
 
-import logger
-import renderer
+from nanogen import logger, renderer
 
 
 FM_SEPARATOR = '----'
