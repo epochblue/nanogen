@@ -1,9 +1,10 @@
 import os
 from setuptools import setup
-from nanogen import __version__
+
+from nanogen import version
 
 entry_points = {
-    'console_scripts': ['nanogen = nanogen.cli:cli']
+    'console_scripts': ['nanogen = cli:cli']
 }
 
 long_description = open(
@@ -14,24 +15,22 @@ long_description = open(
 ).read()
 
 setup(name='nanogen',
-      version=__version__,
-      description='A very small static site generator',
+      version=version,
+      description='A very small static blog generator',
       long_description=long_description,
       author='Bill Israel',
       author_email='bill.israel@gmail.com',
       license='MIT',
       url='https://github.com/epochblue/nanogen',
-      packages=['nanogen'],
+      py_modules=['nanogen'],
       install_requires=[
-          'click==5.1',
-          'mistune==0.7.1',
+          'click==6.6',
+          'mistune==0.7.3',
           'Jinja2==2.8',
-          'MarkupSafe==0.23',
-          'Pygments==2.0.2',
-          'PyYAML==3.11'
+          'Pygments==2.1.3'
       ],
       entry_points=entry_points,
-      keywords=['ssg', 'generator', 'static site generator', 'blog'],
+      keywords=['command line', 'static generator', 'blog'],
       classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Console',
@@ -40,8 +39,6 @@ setup(name='nanogen',
           'License :: OSI Approved :: MIT License',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3.3',
-          'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
           'Topic :: Internet :: WWW/HTTP',
           'Topic :: Utilities',

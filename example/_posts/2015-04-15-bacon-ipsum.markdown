@@ -1,8 +1,4 @@
-----
-title: Bacon Ipsum
-----
-
-## Bacon Ipsum
+# Bacon Ipsum
 
 Bacon ipsum dolor amet shoulder flank biltong, spare ribs porchetta rump
 tri-tip shank sausage strip steak. Ham hock biltong fatback capicola.

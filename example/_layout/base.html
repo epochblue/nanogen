@@ -1,0 +1,14 @@
+<!doctype html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Nanogen example{% endblock %}</title>
+    <link href="/static/example.css" type="text/css" rel="stylesheet">
+</head>
+<body>
+    <h1><a href="/">An example <code>nanogen</code> blog</a></h1>
+
+    <div class="container">
+    {% block content %}
+    {% endblock %}
+    </div>
+</body>

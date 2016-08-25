@@ -1,9 +1,4 @@
-title: Lorem Ipsum
-slug: lorem
-layout: post.html
-----
-
-## Lorem Ipsum
+# Lorem Ipsum
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas pretium
 consequat diam, ac feugiat lorem dapibus egestas. Phasellus mattis scelerisque

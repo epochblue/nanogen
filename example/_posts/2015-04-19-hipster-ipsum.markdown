@@ -1,8 +1,4 @@
-----
-title: Hipster Ipsum
-----
-
-## Hipster Ipsum
+# Hipster Ipsum
 
 Listicle crucifix 3 wolf moon, whatever sartorial gluten-free tousled Austin
 meh seitan. Tousled twee seitan selvage Shoreditch. Skateboard blog lumbersexual

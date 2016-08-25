@@ -3,48 +3,44 @@ import os
 import click
 
 import logger
-import nanogen
-from . import __version__
+from nanogen import Blog, version
+
+
+blog = Blog()
 
 
 @click.group()
 @click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
-@click.version_option(version=__version__)
-@click.pass_context
-def cli(ctx, verbose):
+@click.version_option(version=version)
+def cli(verbose):
     logger.init_logger(verbose)
 
 
 @cli.command()
-@click.pass_context
-def init(ctx):
+def init():
     """Initialize the current directory."""
-    nanogen.init()
+    blog.init()
 
 
 @cli.command()
-@click.pass_context
-def clean(ctx):
+def clean():
     """Clean any generated files."""
-    nanogen.clean()
+    blog.clean()
 
 
 @cli.command()
-@click.pass_context
-def build(ctx):
+def build():
     """Start a build of the site."""
-    nanogen.clean()
-    nanogen.build()
+    blog.clean()
+    blog.build()
 
 
 @cli.command()
 @click.argument('title')
-@click.option('-l', '--layout', default='article.html', help='The layout template the post will use')
-@click.pass_context
-def new(ctx, title, layout):
+def new(title):
     """Create a new post with the given title"""
     try:
-        nanogen.new(title, layout)
+        blog.new(title)
     except ValueError as ve:
         click.ClickException(ve.message)
 
@@ -52,10 +48,9 @@ def new(ctx, title, layout):
 @cli.command()
 @click.option('-h', '--host', default='localhost', help='The hostname to serve on')
 @click.option('-p', '--port', default=8080, type=int, help='The port to serve on')
-@click.pass_context
-def preview(ctx, host, port):
+def preview(host, port):
     """Serve a preview of the site on HOST and PORT."""
-    site_dir = nanogen.get_site_dir()
+    site_dir = os.path.join(os.getcwd(), '_site')
     if not os.path.isdir(site_dir):
         click.ClickException('Unable to locate _site directory. Did you forget to run `nanogen build`?')
 

@@ -1,15 +1,28 @@
 nanogen
 #######
 
-A very small static site generator written in Python.
+A very small static blog generator written in Python.
 
 .. image:: https://img.shields.io/pypi/v/nanogen.svg
     :target: https://pypi.python.org/pypi/nanogen
     :alt: Latest PyPI version
 
-.. image:: https://travis-ci.org/epochblue/nanogen.svg?branch=master
-    :target: https://travis-ci.org/epochblue/nanogen
-    :alt: Current build status
+Purpose
+=======
+
+``nanogen`` exists solely so I can have a blogging platform I call my own.
+If other people find this useful and want to use it, that's wonderful but it's
+not a goal for this project.
+
+The platform is very intentionally bare bones and simple. The code is
+intentionally utilitarian and less-than-perfect.
+
+If you have an idea for a way to improve this without significantly increasing
+``nanogen``'s complexity, please open an issue and let me know. If it's
+something I might use, then it'll get merged. If it isn't, then I'm sorry.
+
+If you're looking for a more fully-featured static site generator, may I
+recommend something like `Jekyll`_ or `Pelican`_ ?
 
 
 Installation
@@ -40,8 +53,7 @@ Initializing
 ------------
 
 Once ``nanogen`` is installed, navigate to the directory you'd like to
-use as your new blog. Our examples will use a ``blog`` directory in our
-home directory::
+use as your new blog. Our examples will use a ``blog`` directory in ``$HOME``::
 
     $> mkdir blog
     $> cd blog
@@ -56,52 +68,77 @@ look like this::
 
     ~/blog
     |-- _posts
-    `-- _layouts
+    `-- _layout
 
 These are all the only two folders required by ``nanogen``, and cannot
-currently be changed by the user. If you're creating a blog-style
-site, your individual posts will go in the ``_posts`` directory, and
-your site's templates will go in the ``_layouts`` directory.
+currently be changed by the user. Your individual posts will go in the
+``_posts`` directory, and the templates will go in the ``_layouts`` directory.
+
+At this time, ``nanogen`` does not come with a built-in theme, so it's up to
+the user to create their own.
 
 
 Creating Posts
 --------------
 
-You can create posts manually by creating a new file in the ``_posts``
-directory. The filename is important (details about its expected format
-can be found in the "A Note About Posts" section). However, if you'd
-rather ``nanogen`` do this for you, then you can use the ``new``
-command. The only required argument to this command is the title of the
+One way to create new posts is by creating a new file in the ``_posts``
+directory. The filename is important and must match the following rules:
+
+1.  The file can't start with an underscore (they are ignored)
+2.  The file's name must match the pattern ``yyyy-mm-dd-<post_title_slug>``
+3.  The file's extension must be a valid Markdown extension (``md``, ``mdown``, or ``markdown``).
+
+To illustrate::
+
+    # valid filename
+    2015-11-01-this-charming-man.md
+
+    # invalid filename
+    15-11-1-bigmouth-strikes-again.txt
+
+If you don't want to try to remember all that, you can use ``nanogen``'s ``new``
+command to do it for you. The only required argument to this command is the title of the
 post being generated::
 
     $> nanogen new "Example Post Title"
 
-Running this will create a file in the ``_posts`` directory, with front
-matter and placeholder text. By default, this command will supply a
-value for ``layout`` in the front-matter of ``article.html``. If you'd
-like to use a different layout for your new post, you can use the
-``--layout`` (or ``-l``) flag::
+Running this will create a properly-named and formatted file in the ``_posts``
+directory.
 
-    $> nanogen new --layout example.html "Example Post Title"
+Draft posts aren't an "official" feature of ``nanogen``, however they are
+possible. By default, when ``nanogen`` generates a site it will only look in the
+``_posts`` folder for files to process. If you'd like to maintain drafts of your
+posts before you publish them, you can create a ``_drafts`` folder next to the
+``_posts`` folder and ``nanogen`` will ignore it during site generation.
+Alternatively, you can prepend the filename of a drafe with an underscore, and
+``nanogen`` will skip over it when searching for files to process.
 
-*Note*: The ".html" in the layout is optional; if it's not provided,
-``nanogen`` will add it for you.
+Post Content Format
+~~~~~~~~~~~~~~~~~~~
 
+``nanogen`` posts don't use `YAML`_ front-matter, so the first line of your post
+will be used for the title of the post. The content of the posts will be
+processed as `Markdown`_ (the Github-flavored variety, complete with
+syntax-highlighted code blocks). A minimal example of a valid ``nanogen`` post
+is this::
 
-Building
---------
+    ## This will become the title (with hashes stripped out)
+
+    **This** will become the post's _content_.
+
+Generating Your Site
+--------------------
 
 Once you're ready to generate your site, you can use the ``build``
 command::
 
     $> nanogen build
 
-This command will walk your directory, process any valid files it
-finds, and will write all the generated files into a ``_site`` folder.
+This command will walk your ``_posts`` directory, process any valid files it
+finds, and will write all the generated HTML files into a ``_site`` folder.
 Although you will want to preview this on your local development
 system (see the following section for how to do this), the ``_site``
-folder can be uploaded to your web host as-is, and served as the root
-for your web server.
+folder can be uploaded to your web host as-is.
 
 *Note*: before each build ``nanogen`` will run the ``clean`` command.
 ``clean`` will remove the ``_site`` directory and all of its contents,
@@ -119,7 +156,7 @@ that allows you to preview your generated site::
     $> nanogen preview
 
 This command will start a server that listens on ``localhost`` port
-``8080``. Simply point a web browser to ``http://localhost:8080`` to
+``8080``. Simply open ``http://localhost:8080`` in a web broswer to
 see how your site looks. If you'd like to use a different hostname or
 port, ``nanogen`` provides an option for each (``-h|--host, and
 -p|--port``, respectively). The following example will start a server
@@ -132,159 +169,61 @@ Cleaning
 --------
 
 If your ``_site`` folder somehow gets corrupted, or you'd simply like
-to generate your site from scratch, you can uses ``nanogen``'s
-``clean`` command::
+to generate your site from scratch, you can use the ``clean`` command::
 
     $> nanogen clean
 
 There is no undo or confirmation when running this command.
 
 
-``nanogen`` Content Types
-=========================
+``nanogen`` Themes
+==================
 
-Posts
------
+*Note*: ``nanogen`` doesn't provide any themes out of the box. If you'd like to
+develop your own theme for ``nanogen``, this section should explain how.
 
-For ``nanogen`` to "publish" (convert from Markdown to HTML) your
-posts, two things must be true:
-
-#. they must be located in the ``_posts`` directory, and
-#. they must be named like this: ``<year>-<month>-<day>-<name>.<ext>``
-
-    - ``<year>`` is a 4-digit year; ``<day>`` and ``<month>`` are
-      two-digits.
-    - ``<name>`` is any slugified string that helps you identify the
-      file.
-    - the ``<ext>`` must be a valid `Markdown`_ extension: ``md``,
-      ``mdown``, or ``markdown``.
-
-Examples::
-
-    # valid filename
-    2015-11-01-this-charming-man.md
-
-    # invalid filename
-    15-11-1-bigmouth-strikes-again.txt
-
-Files in this folder that don't match the above description will be
-skipped and will not be part of the generated site. The content of the
-post files follows the somewhat-standard format of `YAML`_ front-matter
-followed by a separator, followed by a body written in `Markdown`_.
-Below is an example of what this format looks like::
-
-    ----
-    title: This is an example blog post
-    slug: example-post
-    layout: post.html
-    ----
-    
-    Everything from this point forward will be process as **Markdown**.
-    You can _format_ your text however you please. Please check out the
-    Markdown Documentation if you're unfamiliar with Markdown syntax.
+``nanogen`` uses `Jinja2`_ for its templating. If you need information
+about Jinja's syntax, please `refer to their documentation
+<http://jinja.pocoo.org/docs/>`_.
 
 
-The only required field in the front-matter is ``title``. Two optional
-fields are ``slug`` and ``layout``. If these aren't present, defaults
-will be used. ``slug`` defaults to the ``<name>`` field in the post's
-filename, and ``layout`` defaults to ``article.html``. Any other fields
-you add to the front-matter will be ignored by ``nanogen``, but are
-passed to and can be used by your templates.
+Template Files
+--------------
 
-Files in ``_posts`` will be "published" into folders based on the date
-in their filename, which is assumed to be their publish date. For
-example, a blog post with the filename ``2014-11-08-example-post.md``
-will be processed into ``_site/<year>/<month>/<name>.html``.
+The templates that make up the theme for your ``nanogen`` blog need to be placed
+in the ``_layout`` directory. ``nanogen`` only expects a few files to exist, and
+those files are:
 
-Draft posts aren't an official feature of ``nanogen``, however they are
-possible. By default, when ``nanogen`` generates a site it ignores any
-directories and files that start with a ``_`` or a ``.``. If you'd like
-to maintain drafts of your posts, you can create a ``_drafts`` folder
-and ``nanogen`` will ignore it during site generation.
+1. ``index.html``
+2. ``post.html``
+3. ``rss.xml``
 
+``index.html`` will be used as the sites homepage, ``post.html`` will be used to
+generate each individual post, and ``rss.xml`` will be be used to generate your
+blog's RSS feed.
 
-Non-Post Content
-----------------
+All of your blog's posts will be passed to ``index.html`` and ``rss.xml`` via a
+`Jinja2`_ context variable named ``posts``. Individual posts will be passed to
+``post.html`` via a context variable named ``post``. Each post will have the
+following relevant attributes available to use in the template:
 
-For pages not intended to be blog posts (index pages, a post archive,
-about pages, contact pages, etc), ``nanogen`` will simply pick them up
-as it processes files and folders. These files do not use the
-front-matter/Markdown format, but are instead treated as raw templates.
-Their location relative to the root folder will determine their
-placement in the published site folder. For example, an ``about.html``
-file in the ``blog`` folder will become ``_site/about.html`` in the
-generated site.
+* ``content`` - the HTML content of the post
+* ``title`` - the title of the post (will not be processed as Markdown)
+* ``pub_date`` - a Python datetime object representing the publish date of the post
+* ``permalink`` - the relative URL to the post
+
+Please see the ``_layout`` directory in the included example for a basic theme
+you can use to as a jumping off point for your own theme.
 
 
 Static Files
 ------------
 
 If you have any files that you'd like to include in the published site
-(JavaScript files, CSS files, images, etc), but that shouldn't be
-processed in any way, you can have ``nanogen`` copy them into the
-generated site by using ``keep`` in the site's configuration. See the
-Configuration section below for more information.
-
-
-Configuration
-=============
-
-In addition to the per-post configuration (front-matter), there is
-also a site-wide level of configuration available to all posts and
-templates. This configuration is stored in ``config.yaml`` in the
-project root. It isn't strictly required, but ``nanogen`` will warn you
-if it doesn't find one. Below is an example of a typical
-``config.yaml`` file::
-
-    title: cubicle17
-    author: Bill Israel
-    url: http://cubicle17.com/
-    keep: [img, css, js]
-
-None of the fields in ``config.yaml`` are required, but anything
-defined here will be passed to all templates. In the templates,
-everything defined in this file will be available under the ``site``
-variable. For example, to print the ``url`` variable from the above
-example, use ``{{ site.url }}`` in your template.
-
-``keep`` is the only key in the configuration file that ``nanogen``
-explicitly looks for. If it's found, ``nanogen`` expects it to be a
-list of directories names (relative to the project's root dir) that
-need to be copied into the generated site structure. In the above
-example, ``img``, ``css``, and ``js`` are all in the project's root
-directory.
-
-
-Templates
-=========
-
-``nanogen`` uses `Jinja2`_ for its templating. If you need information
-about Jinja's syntax, please `refer to their documentation
-<http://jinja.pocoo.org/docs/>`_.
-
-``nanogen`` passes two variables to every template. To single-
-post pages it passes the site-wide configuration under a variable
-named ``site``, as well as all the post-specific configuration
-(front-matter) via a variable named ``post``. To non-post pages,
-``nanogen`` passes the site-wide configuration (again under the
-``site`` variable), as well as a list of all posts under a variable
-named ``posts``.
-
-
-Misc Notes
-==========
-
-
-#. ``nanogen`` doesn't (and likely won't) provide a ``watch`` mechanism
-   found in other static site generators. If you'd like this
-   functionality, you can use a tool like `Watchman`_ or simply run
-   ``build`` in an infinite loop. The following example will run a
-   build every second::
-
-    $> while [ 1 ]; do nanogen build; sleep 1; done
-
-   If you run this in one tab, and preview in another, trust me it's
-   just like having a ``watch`` command.
+(JavaScript files, CSS files, images, etc), place them into a folder named
+``static`` inside the ``_layout`` folder. This folder will automatically be
+copied into the ``_site`` folder during the build process. No processing will
+be performed on the files within the ``static`` directory.
 
 
 License
@@ -300,10 +239,11 @@ Author
 `Bill Israel`_ - `bill.israel@gmail.com`_
 
 
+.. _Jekyll: http://jekyllrb.com
+.. _Pelican: http://blog.getpelican.com
 .. _Markdown: http://daringfireball.net/projects/markdown
 .. _YAML: http://yaml.org/
 .. _Jinja2: http://jinja2.pocoo.org/
-.. _Watchman: https://facebook.github.io/watchman/
 .. _Bill Israel: http://billisrael.info/
 .. _bill.israel@gmail.com: mailto:bill.israel@gmail.com
 
