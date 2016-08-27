@@ -140,11 +140,6 @@ Although you will want to preview this on your local development
 system (see the following section for how to do this), the ``_site``
 folder can be uploaded to your web host as-is.
 
-*Note*: before each build ``nanogen`` will run the ``clean`` command.
-``clean`` will remove the ``_site`` directory and all of its contents,
-so it's not a good idea to add anything to the ``_site`` directory
-that you intend to keep between builds.
-
 
 Previewing Your Site
 --------------------

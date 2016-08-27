@@ -31,7 +31,6 @@ def clean():
 @cli.command()
 def build():
     """Start a build of the site."""
-    blog.clean()
     blog.build()
 
 
