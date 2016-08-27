@@ -126,6 +126,9 @@ is this::
 
     **This** will become the post's _content_.
 
+The title will be stripped out of the post's content, though it will be
+available to your themes via the ``post.title`` attribute.
+
 Generating Your Site
 --------------------
 
@@ -198,11 +201,13 @@ generate each individual post, and ``rss.xml`` will be be used to generate your
 blog's RSS feed.
 
 All of your blog's posts will be passed to ``index.html`` and ``rss.xml`` via a
-`Jinja2`_ context variable named ``posts``. Individual posts will be passed to
-``post.html`` via a context variable named ``post``. Each post will have the
-following relevant attributes available to use in the template:
+`Jinja2`_ context variable named ``posts`` (posts will be in reverse
+chronological order). Individual posts will be passed to ``post.html`` via a
+context variable named ``post``. Each post will have the following relevant
+attributes available to use in the template:
 
-* ``content`` - the HTML content of the post
+* ``html_content`` - the HTML version of the post
+* ``markdown_content`` - the Markdown version of the post (minus the title)
 * ``title`` - the title of the post (will not be processed as Markdown)
 * ``pub_date`` - a Python datetime object representing the publish date of the post
 * ``permalink`` - the relative URL to the post
@@ -219,6 +224,12 @@ If you have any files that you'd like to include in the published site
 ``static`` inside the ``_layout`` folder. This folder will automatically be
 copied into the ``_site`` folder during the build process. No processing will
 be performed on the files within the ``static`` directory.
+
+
+Sites Using ``nanogen``
+=======================
+
+* `http://blog.cubicle17.com/`__ (code is `available here`__)
 
 
 License
@@ -242,3 +253,5 @@ Author
 .. _Bill Israel: http://billisrael.info/
 .. _bill.israel@gmail.com: mailto:bill.israel@gmail.com
 
+__ http://blog.cubicle17.com/
+__ https://github.com/epochblue/blog

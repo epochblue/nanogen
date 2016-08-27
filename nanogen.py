@@ -30,8 +30,10 @@ class Post(object):
         with open(self.path, 'r') as p:
             self.raw_content = p.read()
 
-        self.title = self.raw_content.strip().splitlines()[0].lstrip('#')
-        self.content = renderer.markdown(self.raw_content)
+        lines = self.raw_content.strip().splitlines()
+        self.title = lines[0].lstrip('#')
+        self.markdown_content = '\n'.join(lines[2:]).strip()
+        self.html_content = renderer.markdown(self.markdown_content)
 
     def __repr__(self):
         return u'{}(path={})'.format(self.__class__.__name__, self.path)
