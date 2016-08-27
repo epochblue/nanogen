@@ -14,7 +14,7 @@ import renderer
 
 
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
-__version__ = (0, 9, 9)
+__version__ = (1, 0, 0)
 version = '.'.join(map(str, __version__))
 
 
