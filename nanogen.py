@@ -1,8 +1,6 @@
 """
 nanogen - a very small blog generator
 """
-from __future__ import absolute_import
-
 import os
 import re
 import shutil
