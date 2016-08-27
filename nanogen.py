@@ -164,8 +164,13 @@ class Blog(object):
 
         :return: None
         """
-        shutil.copytree(os.path.join(self.PATHS['layout'], 'static'),
-                        os.path.join(self.PATHS['site'], 'static'))
+        layout_static = os.path.join(self.PATHS['layout'], 'static')
+        site_static = os.path.join(self.PATHS['site'], 'static')
+
+        if os.path.isdir(os.path.join(site_static)):
+            shutil.rmtree(site_static)
+
+        shutil.copytree(layout_static, site_static)
 
     def init(self):
         """
