@@ -1,7 +1,7 @@
 import os
 from setuptools import setup
 
-from nanogen import version
+from version import version
 
 entry_points = {
     'console_scripts': ['nanogen = cli:cli']

@@ -11,11 +11,10 @@ import jinja2
 
 import logger
 import renderer
+from version import version
 
 
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
-__version__ = (1, 0, 0)
-version = '.'.join(map(str, __version__))
 
 
 class Post(object):
