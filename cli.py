@@ -3,7 +3,8 @@ import os
 import click
 
 import logger
-from nanogen import Blog, version
+import version
+from nanogen import Blog
 
 
 blog = Blog()
@@ -11,7 +12,7 @@ blog = Blog()
 
 @click.group()
 @click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
-@click.version_option(version=version)
+@click.version_option(version=version.version)
 def cli(verbose):
     logger.init_logger(verbose)
 
@@ -39,7 +40,7 @@ def build():
 def new(title):
     """Create a new post with the given title"""
     try:
-        blog.new(title)
+        blog.new_post(title)
     except ValueError as ve:
         click.ClickException(ve.message)
 
@@ -62,7 +63,7 @@ def preview(host, port):
         import http.server
         handler = http.server.SimpleHTTPRequestHandler
         handler.protocol_version = 'HTTP/1.0'
-        httpd = http.server.HTTPServer(host, 8080, handler)
+        httpd = http.server.HTTPServer((host, 8080), handler)
 
     try:
         click.secho('Serving your site on http://{host}:{port}/...'.format(host=host, port=port))

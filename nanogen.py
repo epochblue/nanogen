@@ -2,7 +2,6 @@
 nanogen - a very small blog generator
 """
 import os
-import re
 import shutil
 import datetime
 import subprocess
@@ -11,7 +10,7 @@ import jinja2
 
 import logger
 import renderer
-from version import version
+import utils
 
 
 __author__ = 'Bill Israel <bill.israel@gmail.com>'
@@ -71,50 +70,23 @@ class Blog(object):
     }
 
     def __init__(self):
-        self.posts = None
+        self.posts = self.collect_posts()
 
         jinja_loader = jinja2.FileSystemLoader(self.PATHS['layout'])
         self.jinja_env = jinja2.Environment(loader=jinja_loader)
-
-    def slugify(self, text):
-        """Create a suitable slug for the given text"""
-        return re.sub(r'\W', '-', text).lower()
-
-    def is_valid_post_file(self, path):
-        """
-        Determines if the given path is valid for a post file.
-
-        The criteria:
-            1. The file can't start with an underscore; these are ignored
-            2. The file's name must match the pattern yyyy-mm-dd-*
-            3. The file's extension must be a valid Markdown extension
-
-        :param path: The file path to validate
-        """
-        post_pattern = r'^\d{4}-\d{2}-\d{2}-.*'
-        markdown_extensions = ['md', 'markdown', 'mdown']
-
-        filename, ext = os.path.basename(path).rsplit('.', 1)
-
-        ignored = not filename.startswith('_')
-        valid_filename = re.match(post_pattern, filename)
-        valid_ext = ext in markdown_extensions
-
-        return ignored and valid_filename and valid_ext
 
     def collect_posts(self):
         """
         Finds valid post files within the posts directory.
 
-        :return: None
+        :return: A list of found posts
+        :rtype: list
         """
-        if self.posts is None:
-            ls = os.listdir(self.PATHS['posts'])
-            post_path = lambda path: os.path.join(self.PATHS['posts'], path)
-            self.posts = [Post(self.PATHS['site'], post_path(p))
-                          for p in ls
-                          if self.is_valid_post_file(p)]
-        return self.posts
+        ls = os.listdir(self.PATHS['posts'])
+        post_path = lambda path: os.path.join(self.PATHS['posts'], path)
+        return [Post(self.PATHS['site'], post_path(p))
+                for p in ls
+                if utils.is_valid_post_file(p)]
 
     def generate_posts(self):
         """
@@ -123,9 +95,8 @@ class Blog(object):
         :return: None
         """
         logger.log.debug('Processing posts...')
-        posts = self.collect_posts()
 
-        for post in posts:
+        for post in self.posts:
             logger.log.debug('Rendering template for post %s', post.path)
             template = self.jinja_env.get_template('post.html')
             html = template.render(post=post)
@@ -147,7 +118,7 @@ class Blog(object):
         :return: None
         """
         logger.log.debug('Writing index pages...')
-        posts = self.collect_posts()
+        posts = self.posts
 
         for page in ('index.html', 'rss.xml'):
             logger.log.debug('Rendering template for page %s', page)
@@ -209,7 +180,7 @@ class Blog(object):
         if os.path.isdir(site_dir):
             subprocess.call(['rm', '-r', site_dir])
 
-    def new(self, title):
+    def new_post(self, title):
         """
         Creates a new post for the site.
 
@@ -219,7 +190,7 @@ class Blog(object):
         :return: None
         """
         date = datetime.datetime.now().strftime('%Y-%m-%d')
-        slug = self.slugify(title)
+        slug = utils.slugify(title)
         filename = '{}-{}.md'.format(date, slug)
         full_path = os.path.join(self.PATHS['posts'], filename)
 
@@ -229,10 +200,10 @@ class Blog(object):
 Your post content goes here.
 """.strip()
 
-        if not os.path.isfile(full_path):
-            with open(full_path, 'w') as f:
-                text = default_post.format(title=title)
-                f.write(text)
-            logger.log.info('Created {file}'.format(file=full_path))
-        else:
+        if os.path.isfile(full_path):
             raise ValueError('A post with that date and title already exists')
+
+        with open(full_path, 'w') as f:
+            text = default_post.format(title=title)
+            f.write(text)
+        logger.log.info('Created {file}'.format(file=full_path))
