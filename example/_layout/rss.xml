@@ -8,10 +8,10 @@
 
         {% for post in posts[:10] %}
         <item>
-            <guid>{{ post.permalink }}</guid>
+            <guid>{{ site.url }}{{ post.permalink }}</guid>
             <title>{{ post.title }}</title>
             <pubDate>{{ post.pub_date.strftime('%a, %d %b %Y %H:%M:%S -0000') }}</pubDate>
-            <link>http://nanogen.example.com/{{ post.permalink }}</link>
+            <link>{{ site.url }}{{ post.permalink }}{{ post.permalink }}</link>
             <description>
                 {{ post.html_content|escape }}
             </description>
