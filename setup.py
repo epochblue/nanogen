@@ -24,10 +24,10 @@ setup(name='nanogen',
       url='https://github.com/epochblue/nanogen',
       py_modules=['nanogen'],
       install_requires=[
-          'click==6.6',
-          'mistune==0.7.3',
-          'Jinja2==2.8',
-          'Pygments==2.1.3'
+          'click==6.7',
+          'mistune==0.8.3',
+          'Jinja2==2.10',
+          'Pygments==2.2.0'
       ],
       entry_points=entry_points,
       keywords=['command line', 'static generator', 'blog'],
