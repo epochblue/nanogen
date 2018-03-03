@@ -100,6 +100,10 @@ class Blog(object):
         :return: A list of found posts
         :rtype: list
         """
+        if not os.path.isdir(self.PATHS['posts']):
+            # There are no posts yet, so let's get outta here
+            return []
+
         ls = os.listdir(self.PATHS['posts'])
         post_path = lambda path: os.path.join(self.PATHS['posts'], path)
         return [Post(self.PATHS['site'], post_path(p))
@@ -187,7 +191,7 @@ class Blog(object):
 
         :return: None
         """
-        for d in [self.PATHS['posts'], self.PATHS['templates']]:
+        for d in (self.PATHS['posts'], self.PATHS['layout']):
             logger.log.debug('Creating directory %s' % d)
             if not os.path.isdir(d):
                 subprocess.call(['mkdir', d])
@@ -246,11 +250,11 @@ class Blog(object):
         filename = '{}-{}.md'.format(date, slug)
         full_path = os.path.join(self.PATHS['posts'], filename)
 
-        default_post = """
-## {title}
+        default_post = textwrap.dedent("""\
+        ## {title}
 
-Your post content goes here.
-""".strip()
+        Your post content goes here.
+        """)
 
         if os.path.isfile(full_path):
             raise ValueError('A post with that date and title already exists')
