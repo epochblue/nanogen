@@ -6,6 +6,11 @@ import shutil
 import datetime
 import subprocess
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
 import jinja2
 
 import logger
@@ -70,10 +75,22 @@ class Blog(object):
     }
 
     def __init__(self):
+        self.config = self.parse_config()
         self.posts = self.collect_posts()
 
         jinja_loader = jinja2.FileSystemLoader(self.PATHS['layout'])
         self.jinja_env = jinja2.Environment(loader=jinja_loader)
+
+    def parse_config(self):
+        """
+        Pulls in high-level config variables about the blog.
+
+        :return: A dictionary of configuration items
+        :rtype: dict
+        """
+        config = configparser.ConfigParser()
+        config.read(os.path.join(self.PATHS['cwd'], 'blog.cfg'))
+        return config
 
     def collect_posts(self):
         """
@@ -99,7 +116,7 @@ class Blog(object):
         for post in self.posts:
             logger.log.debug('Rendering template for post %s', post.path)
             template = self.jinja_env.get_template('post.html')
-            html = template.render(post=post)
+            html = template.render(site=self.config['site'], post=post)
 
             logger.log.debug('Writing post to disk: %s', post)
             post_dir = os.path.dirname(post.permapath)
@@ -124,7 +141,7 @@ class Blog(object):
             logger.log.debug('Rendering template for page %s', page)
             filepath = os.path.join(self.PATHS['site'], page)
             template = self.jinja_env.get_template(page)
-            html = template.render(posts=list(reversed(posts)))
+            html = template.render(site=self.config['site'], posts=list(reversed(posts)))
 
             logger.log.debug('Writing page to disk: %s', page)
             with open(filepath, 'w') as pout:
