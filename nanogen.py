@@ -146,23 +146,25 @@ class Blog(object):
         with open(filepath, 'w') as pout:
             pout.write(html)
 
-    def generate_feed(self):
+    def generate_feeds(self):
         logger.log.debug('Writing feed pages...')
         posts = self.posts
 
-        logger.log.debug('Rendering index.html')
-        filepath = os.path.join(self.PATHS['site'], 'rss.xml')
+        for feed in ('rss.xml', 'feed.json'):
+            logger.log.debug('Rendering index.html')
+            filepath = os.path.join(self.PATHS['site'], feed)
 
-        try:
-            template = self.jinja_env.get_template('rss.xml')
-        except jinja2.TemplateNotFound:
-            logger.log.debug('Unable to locate template for %s, skipping...', 'rss.xml')
-            return
-        html = template.render(site=self.config['site'], posts=list(reversed(posts)))
+            try:
+                template = self.jinja_env.get_template(feed)
+            except jinja2.TemplateNotFound:
+                logger.log.debug('Unable to locate template for %s, skipping...', feed)
+                continue
 
-        logger.log.debug('Writing page to disk: %s', 'rss.xml')
-        with open(filepath, 'w') as pout:
-            pout.write(html)
+            html = template.render(site=self.config['site'], posts=list(reversed(posts)))
+
+            logger.log.debug('Writing page to disk: %s', feed)
+            with open(filepath, 'w') as pout:
+                pout.write(html)
 
     def copy_static_files(self):
         """
@@ -201,7 +203,7 @@ class Blog(object):
 
         self.generate_posts()
         self.generate_index_page()
-        self.generate_feed()
+        self.generate_feeds()
         self.copy_static_files()
 
     def clean(self):
