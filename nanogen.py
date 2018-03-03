@@ -1,10 +1,11 @@
 """
 nanogen - a very small blog generator
 """
+import datetime
 import os
 import shutil
-import datetime
 import subprocess
+import textwrap
 
 try:
     import configparser
@@ -190,6 +191,20 @@ class Blog(object):
             logger.log.debug('Creating directory %s' % d)
             if not os.path.isdir(d):
                 subprocess.call(['mkdir', d])
+
+        # Generate template blog configuration file
+        config_path = os.path.join(self.PATHS['layout'], 'blog.cfg')
+        if not os.path.exists(config_path):
+            with open(config_path, 'w') as f:
+                text = textwrap.dedent("""\
+                [site]
+                title = Your blog's title here
+                author = Your name here
+                email = you@wherever.com
+                url = https://yourblog.example.com
+                description = Your blog's description here
+                """)
+                f.write(text)
 
     def build(self):
         """
