@@ -1,18 +1,19 @@
 <?xml version="1.0" ?>
 <rss version="2.0">
     <channel>
-        <title>Nanogen example</title>
-        <link>http://nanogen.example.com/</link>
-        <description>Just an example.</description>
+        <title>{{ site.title }}</title>
+        <link>{{ site.url }}</link>
+        <description>{{ site.description }}</description>
+        <managingEditor>{{ site.email }} ({{ site.author }})</managingEditor>
 
         {% for post in posts[:10] %}
         <item>
-            <guid isPermaLink="false">{{ post.permalink }}</guid>
+            <guid>{{ post.permalink }}</guid>
             <title>{{ post.title }}</title>
             <pubDate>{{ post.pub_date.strftime('%a, %d %b %Y %H:%M:%S -0000') }}</pubDate>
             <link>http://nanogen.example.com/{{ post.permalink }}</link>
             <description>
-                {{ post.content|escape }}
+                {{ post.html_content|escape }}
             </description>
         </item>
         {% endfor %}
