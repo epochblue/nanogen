@@ -128,24 +128,41 @@ class Blog(object):
             with open(post.permapath, 'w') as pout:
                 pout.write(html)
 
-    def generate_index_pages(self):
+    def generate_index_page(self):
         """
-        Generate the index pages (list of posts, RSS feed).
+        Generate the index page of posts.
 
         :return: None
         """
-        logger.log.debug('Writing index pages...')
+        logger.log.debug('Writing index page...')
         posts = self.posts
 
-        for page in ('index.html', 'rss.xml'):
-            logger.log.debug('Rendering template for page %s', page)
-            filepath = os.path.join(self.PATHS['site'], page)
-            template = self.jinja_env.get_template(page)
-            html = template.render(site=self.config['site'], posts=list(reversed(posts)))
+        logger.log.debug('Rendering index.html')
+        filepath = os.path.join(self.PATHS['site'], 'index.html')
+        template = self.jinja_env.get_template('index.html')
+        html = template.render(site=self.config['site'], posts=list(reversed(posts)))
 
-            logger.log.debug('Writing page to disk: %s', page)
-            with open(filepath, 'w') as pout:
-                pout.write(html)
+        logger.log.debug('Writing page to disk: index.html')
+        with open(filepath, 'w') as pout:
+            pout.write(html)
+
+    def generate_feed(self):
+        logger.log.debug('Writing feed pages...')
+        posts = self.posts
+
+        logger.log.debug('Rendering index.html')
+        filepath = os.path.join(self.PATHS['site'], 'rss.xml')
+
+        try:
+            template = self.jinja_env.get_template('rss.xml')
+        except jinja2.TemplateNotFound:
+            logger.log.debug('Unable to locate template for %s, skipping...', 'rss.xml')
+            return
+        html = template.render(site=self.config['site'], posts=list(reversed(posts)))
+
+        logger.log.debug('Writing page to disk: %s', 'rss.xml')
+        with open(filepath, 'w') as pout:
+            pout.write(html)
 
     def copy_static_files(self):
         """
@@ -183,7 +200,8 @@ class Blog(object):
             subprocess.call(['mkdir', self.PATHS['site']])
 
         self.generate_posts()
-        self.generate_index_pages()
+        self.generate_index_page()
+        self.generate_feed()
         self.copy_static_files()
 
     def clean(self):
