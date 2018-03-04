@@ -44,6 +44,15 @@ def new(title):
     except ValueError as ve:
         click.ClickException(ve.message)
 
+@cli.command()
+@click.argument('title')
+def draft(title):
+    """Create a new draft post with the given title"""
+    try:
+        blog.new_post(title, draft=True)
+    except ValueError as ve:
+        click.ClickException(ve.message)
+
 
 @cli.command()
 @click.option('-h', '--host', default='localhost', help='The hostname to serve on')

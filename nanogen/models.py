@@ -72,6 +72,7 @@ class Blog(object):
         'cwd': os.getcwd(),
         'site': os.path.join(os.getcwd(), '_site'),
         'posts': os.path.join(os.getcwd(), '_posts'),
+        'drafts': os.path.join(os.getcwd(), '_drafts'),
         'layout': os.path.join(os.getcwd(), '_layout')
     }
 
@@ -191,7 +192,7 @@ class Blog(object):
 
         :return: None
         """
-        for d in (self.PATHS['posts'], self.PATHS['layout']):
+        for d in (self.PATHS['posts'], self.PATHS['layout'], self.PATHS['drafts']):
             logger.log.debug('Creating directory %s' % d)
             if not os.path.isdir(d):
                 subprocess.call(['mkdir', d])
@@ -236,19 +237,22 @@ class Blog(object):
         if os.path.isdir(site_dir):
             subprocess.call(['rm', '-r', site_dir])
 
-    def new_post(self, title):
+    def new_post(self, title, draft=False):
         """
         Creates a new post for the site.
 
         :param title: What to use as the title for this post
         :type title: string
+        :param draft: Indicates where the file being created is a draft
+        :type draft: bool
         :raises: ValueError if this post already exists
         :return: None
         """
         date = datetime.datetime.now().strftime('%Y-%m-%d')
         slug = utils.slugify(title)
         filename = '{}-{}.md'.format(date, slug)
-        full_path = os.path.join(self.PATHS['posts'], filename)
+        base_path = self.PATHS['drafts'] if draft else self.PATHS['posts']
+        full_path = os.path.join(base_path, filename)
 
         default_post = textwrap.dedent("""\
         ## {title}
@@ -263,3 +267,7 @@ class Blog(object):
             text = default_post.format(title=title)
             f.write(text)
         logger.log.info('Created {file}'.format(file=full_path))
+
+        # Open your new post in $VISUAL or $EDITOR or fallback to `nano`
+        editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'nano'))
+        subprocess.call([editor, full_path])
