@@ -33,7 +33,7 @@ setup(name='nanogen',
       author_email='bill.israel@gmail.com',
       license='MIT',
       url='https://github.com/epochblue/nanogen',
-      py_modules=['nanogen'],
+      packages=['nanogen'],
       install_requires=install_requires,
       extras_require={
           'dev': dev_requires,

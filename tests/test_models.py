@@ -4,6 +4,7 @@ from unittest import mock
 
 from nanogen import models
 
+
 example_post = """\
 # Test Post
 
@@ -30,8 +31,8 @@ def test_post(tmpdir):
     f = tmpdir.mkdir('blog').join('2018-01-01-test-post.md')
     f.write(example_post)
 
-    file_path = os.path.join(tmpdir, 'blog', '2018-01-01-test-post.md')
-    p = models.Post(tmpdir, file_path)
+    file_path = os.path.join(str(tmpdir), 'blog', '2018-01-01-test-post.md')
+    p = models.Post(str(tmpdir), file_path)
 
     assert p.filename == '2018-01-01-test-post.md'
     assert p.title == 'Test Post'
@@ -41,7 +42,7 @@ def test_post(tmpdir):
     assert p.pub_date == datetime.datetime(2018, 1, 1, 0, 0, 0)
     assert p.slug == 'test-post'
     assert p.html_filename == 'test-post.html'
-    assert p.permapath == os.path.join(tmpdir, '2018', '01', 'test-post.html')
+    assert p.permapath == os.path.join(str(tmpdir), '2018', '01', 'test-post.html')
     assert p.permalink == os.path.join('2018', '01', 'test-post.html')
 
 
@@ -49,7 +50,7 @@ def test_blog_create(tmpdir):
     path = tmpdir.mkdir('blog')
     config_file = path.join('blog.cfg')
     config_file.write(example_config)
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     assert len(blog.posts) == 0
     assert blog.config['site']['author'] == 'Example user'
     assert blog.config['site']['email'] == 'user@example.com'
@@ -60,10 +61,10 @@ def test_blog_create(tmpdir):
 
 def test_blog_init(tmpdir):
     path = tmpdir.mkdir('blog')
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
 
-    listing = [os.path.basename(file) for file in path.listdir()]
+    listing = [os.path.basename(str(file)) for file in path.listdir()]
     assert len(listing) == 4
     assert 'blog.cfg' in listing
     assert '_layout' in listing
@@ -73,7 +74,7 @@ def test_blog_init(tmpdir):
 
 def test_blog_new_post(tmpdir):
     path = tmpdir.mkdir('blog')
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
 
     before_posts = blog.collect_posts()
@@ -85,13 +86,17 @@ def test_blog_new_post(tmpdir):
     after_posts = blog.collect_posts()
     assert len(after_posts) == 1
     today = datetime.date.today()
-    expected_filename = f'{today.year}-{today.month:02d}-{today.day:02d}-test-title.md'
+    expected_filename = '{}-{:02d}-{:02d}-test-title.md'.format(
+        today.year,
+        today.month,
+        today.day
+    )
     assert after_posts[0].filename == expected_filename
 
 
 def test_blog_new_draft(tmpdir):
     path = tmpdir.mkdir('blog')
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
 
     before_posts = blog.collect_posts()
@@ -109,14 +114,14 @@ def test_blog_copy_static_files(tmpdir):
     site_path = path.mkdir('_site')
 
     # Add a static file to the projet
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
     css_file = path.join('_layout').mkdir('static').join('example.css')
     css_file.write('# CSS goes here')
     blog.copy_static_files()
 
     site_static_path = site_path.join('static')
-    static_files = [os.path.basename(file) for file in site_static_path.listdir()]
+    static_files = [os.path.basename(str(file)) for file in site_static_path.listdir()]
     assert 'example.css' in static_files
 
 
@@ -125,7 +130,7 @@ def test_blog_generate_posts(tmpdir):
     site_path = path.mkdir('_site')
 
     # Set up a nanogen blog for posts
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
 
     with mock.patch('subprocess.call'):
@@ -143,12 +148,12 @@ def test_blog_generate_posts(tmpdir):
     blog_config.write(example_config)
 
     # Refresh the blog instance to better emulate real-world usage
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.generate_posts()
 
     today = datetime.date.today()
-    expected_post_dir = site_path.join(f'{today.year}').join(f'{today.month:02d}')
-    generated_posts = [os.path.basename(file) for file in expected_post_dir.listdir()]
+    expected_post_dir = site_path.join('{}'.format(today.year)).join('{:02d}'.format(today.month))
+    generated_posts = [os.path.basename(str(file)) for file in expected_post_dir.listdir()]
     assert len(generated_posts) == 1
     assert 'test-title-1.html' in generated_posts
 
@@ -158,7 +163,7 @@ def test_blog_generate_index_page(tmpdir):
     site_path = path.mkdir('_site')
 
     # Set up a nanogen blog for posts
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
 
     with mock.patch('subprocess.call'):
@@ -176,10 +181,10 @@ def test_blog_generate_index_page(tmpdir):
     blog_config.write('[site]')
 
     # Refresh the blog instance to better emulate real-world usage
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.generate_index_page()
 
-    site_dir = [os.path.basename(file) for file in site_path.listdir()]
+    site_dir = [os.path.basename(str(file)) for file in site_path.listdir()]
     assert 'index.html' in site_dir
 
 
@@ -188,17 +193,17 @@ def test_blog_generate_feeds_no_feed_files(tmpdir):
     site_path = path.mkdir('_site')
 
     # Set up a nanogen blog for posts
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
 
     blog_config = path.join('_layout').join('blog.cfg')
     blog_config.write(example_config)
 
     # Refresh the blog instance to better emulate real-world usage
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.generate_feeds()
 
-    site_dir = [os.path.basename(file) for file in site_path.listdir()]
+    site_dir = [os.path.basename(str(file)) for file in site_path.listdir()]
     assert 'rss.xml' not in site_dir
     assert 'feed.json' not in site_dir
 
@@ -208,7 +213,7 @@ def test_blog_feeds(tmpdir):
     site_path = path.mkdir('_site')
 
     # Set up a nanogen blog for posts
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.init()
 
     with mock.patch('subprocess.call'):
@@ -224,10 +229,10 @@ def test_blog_feeds(tmpdir):
     blog_config.write(example_config)
 
     # Refresh the blog instance to better emulate real-world usage
-    blog = models.Blog(path)
+    blog = models.Blog(str(path))
     blog.generate_feeds()
 
-    site_dir = [os.path.basename(file) for file in site_path.listdir()]
+    site_dir = [os.path.basename(str(file)) for file in site_path.listdir()]
     assert 'rss.xml' in site_dir
     assert 'feed.json' in site_dir
 
@@ -238,7 +243,7 @@ def test_blog_build_and_clean(tmpdir):
         site_path = path.mkdir('_site')
 
         # Set up a nanogen blog for posts
-        blog = models.Blog(path)
+        blog = models.Blog(str(path))
         blog.init()
 
         with mock.patch('subprocess.call'):
@@ -264,15 +269,15 @@ def test_blog_build_and_clean(tmpdir):
         blog_config.write(example_config)
 
         # Refresh the blog instance to better emulate real-world usage
-        blog = models.Blog(path)
+        blog = models.Blog(str(path))
         blog.build()
 
-        site_dir = [os.path.basename(file) for file in site_path.listdir()]
+        site_dir = [os.path.basename(str(file)) for file in site_path.listdir()]
         assert 'index.html' in site_dir
 
         today = datetime.date.today()
-        expected_post_dir = site_path.join(f'{today.year}').join(f'{today.month:02d}')
-        generated_posts = [os.path.basename(file) for file in expected_post_dir.listdir()]
+        expected_post_dir = site_path.join('{}'.format(today.year)).join('{:02d}'.format(today.month))
+        generated_posts = [os.path.basename(str(file)) for file in expected_post_dir.listdir()]
         assert len(generated_posts) == 1
         assert 'test-title-1.html' in generated_posts
 
