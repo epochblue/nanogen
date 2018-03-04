@@ -11,15 +11,11 @@ Purpose
 =======
 
 ``nanogen`` exists solely so I can have a blogging platform I call my own.
-If other people find this useful and want to use it, that's wonderful but it's
-not a goal for this project.
-
 The platform is very intentionally bare bones and simple. The code is
-intentionally utilitarian and less-than-perfect.
+intentionally utilitarian and realistically less-than-perfect.
 
 If you have an idea for a way to improve this without significantly increasing
-``nanogen``'s complexity, please open an issue and let me know. If it's
-something I might use, then it'll get merged. If it isn't, then I'm sorry.
+``nanogen``'s complexity, please open an issue and let me know.
 
 If you're looking for a more fully-featured static site generator, may I
 recommend something like `Jekyll`_ or `Pelican`_ ?
@@ -41,7 +37,7 @@ manually::
     $> python setup.py install
 
 
-Note : To avoid possible dependency version issues, I advise installing
+Note : To avoid possible dependency version issues, I recommend installing
 ``nanogen`` into a virtual environment, rather than globally.
 
 
@@ -67,15 +63,22 @@ Running this command will generate the basic directories used by
 look like this::
 
     ~/blog
-    |-- _posts
-    `-- _layout
+    |-- _layout
+    |   `-- blog.cfg
+    `-- _posts
 
-These are all the only two folders required by ``nanogen``, and cannot
-currently be changed by the user. Your individual posts will go in the
+``_posts`` and ``_layout`` are the only two folders required by ``nanogen``, and
+their names cannot be changed by the user. Your individual posts will go in the
 ``_posts`` directory, and the templates will go in the ``_layouts`` directory.
 
+The ``blog.cfg`` file will hold metadata about your blog (author's name and
+email, along with the site's title, description, and URL). A skeleton version of
+this file is created for your during ``init``. The keys and values contained in
+this file will be passed to your templates under the ``site`` variable. For
+example: your site's title will be be available in the ``site.title`` attribute.
+
 At this time, ``nanogen`` does not come with a built-in theme, so it's up to
-the user to create their own.
+you to create your own.
 
 
 Creating Posts
@@ -110,8 +113,9 @@ possible. By default, when ``nanogen`` generates a site it will only look in the
 ``_posts`` folder for files to process. If you'd like to maintain drafts of your
 posts before you publish them, you can create a ``_drafts`` folder next to the
 ``_posts`` folder and ``nanogen`` will ignore it during site generation.
-Alternatively, you can prepend the filename of a drafe with an underscore, and
-``nanogen`` will skip over it when searching for files to process.
+Alternatively, you can prepend the filename of a draft post with an underscore,
+and ``nanogen`` will skip over it when searching for files to process.
+
 
 Post Content Format
 ~~~~~~~~~~~~~~~~~~~
@@ -128,6 +132,7 @@ is this::
 
 The title will be stripped out of the post's content, though it will be
 available to your themes via the ``post.title`` attribute.
+
 
 Generating Your Site
 --------------------
