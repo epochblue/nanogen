@@ -35,12 +35,16 @@ class Post(object):
             self.raw_content = p.read()
 
         lines = self.raw_content.strip().splitlines()
-        self.title = lines[0].lstrip('#')
+        self.title = lines[0].lstrip('#').strip()
         self.markdown_content = '\n'.join(lines[2:]).strip()
         self.html_content = renderer.markdown(self.markdown_content)
 
     def __repr__(self):
-        return u'{}(path={})'.format(self.__class__.__name__, self.path)
+        return u'{}(base_path={}, path_to_file={})'.format(
+            self.__class__.__name__,
+            self.base_path,
+            self.path
+        )
 
     @property
     def pub_date(self):
@@ -64,19 +68,19 @@ class Post(object):
     @property
     def permalink(self):
         dt = self.pub_date
-        return '/{}/{:02d}/{}'.format(dt.year, dt.month, self.html_filename)
+        return os.path.join(str(dt.year), '{:02d}'.format(dt.month), self.html_filename)
 
 
 class Blog(object):
-    PATHS = {
-        'cwd': os.getcwd(),
-        'site': os.path.join(os.getcwd(), '_site'),
-        'posts': os.path.join(os.getcwd(), '_posts'),
-        'drafts': os.path.join(os.getcwd(), '_drafts'),
-        'layout': os.path.join(os.getcwd(), '_layout')
-    }
-
-    def __init__(self):
+    def __init__(self, base_dir):
+        self.PATHS = {
+            'cwd': base_dir,
+            'site': os.path.join(base_dir, '_site'),
+            'posts': os.path.join(base_dir, '_posts'),
+            'drafts': os.path.join(base_dir, '_drafts'),
+            'layout': os.path.join(base_dir, '_layout')
+        }
+        
         self.config = self.parse_config()
         self.posts = self.collect_posts()
 
@@ -198,7 +202,7 @@ class Blog(object):
                 subprocess.call(['mkdir', d])
 
         # Generate template blog configuration file
-        config_path = os.path.join(self.PATHS['layout'], 'blog.cfg')
+        config_path = os.path.join(self.PATHS['cwd'], 'blog.cfg')
         if not os.path.exists(config_path):
             with open(config_path, 'w') as f:
                 text = textwrap.dedent("""\

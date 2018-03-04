@@ -22,6 +22,9 @@ def is_valid_post_file(basename):
     post_pattern = r'^\d{4}-\d{2}-\d{2}-.*'
     markdown_extensions = ['md', 'markdown', 'mdown']
 
+    if '.' not in basename:
+        return False
+
     filename, ext = os.path.basename(basename).rsplit('.', 1)
 
     ignorable = filename.startswith('_')

@@ -3,6 +3,17 @@ from setuptools import setup
 
 from nanogen.version import version
 
+install_requires = [
+    'click==6.7',
+    'mistune==0.8.3',
+    'Jinja2==2.10',
+    'Pygments==2.2.0'
+]
+
+dev_requires = [
+    'pytest==3.4.1'
+]
+
 entry_points = {
     'console_scripts': ['nanogen = nanogen.cli:cli']
 }
@@ -23,12 +34,10 @@ setup(name='nanogen',
       license='MIT',
       url='https://github.com/epochblue/nanogen',
       py_modules=['nanogen'],
-      install_requires=[
-          'click==6.7',
-          'mistune==0.8.3',
-          'Jinja2==2.10',
-          'Pygments==2.2.0'
-      ],
+      install_requires=install_requires,
+      extras_require={
+          'dev': dev_requires,
+      },
       entry_points=entry_points,
       keywords=['command line', 'static generator', 'blog'],
       classifiers=[

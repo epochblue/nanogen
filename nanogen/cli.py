@@ -7,7 +7,7 @@ from nanogen import version
 from nanogen import models
 
 
-blog = models.Blog()
+blog = models.Blog(os.getcwd())
 
 
 @click.group()
@@ -42,7 +42,7 @@ def new(title):
     try:
         blog.new_post(title)
     except ValueError as ve:
-        click.ClickException(ve.message)
+        click.ClickException(str(ve))
 
 @cli.command()
 @click.argument('title')
@@ -51,7 +51,7 @@ def draft(title):
     try:
         blog.new_post(title, draft=True)
     except ValueError as ve:
-        click.ClickException(ve.message)
+        click.ClickException(str(ve))
 
 
 @cli.command()

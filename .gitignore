@@ -12,6 +12,7 @@
 *.egg-info
 build
 dist
+.pytest_cache
 
 # nanogen files
 example/_site
