@@ -14,9 +14,9 @@ except ImportError:
 
 import jinja2
 
-import logger
-import renderer
-import utils
+from nanogen import logger
+from nanogen import renderer
+from nanogen import utils
 
 
 __author__ = 'Bill Israel <bill.israel@gmail.com>'

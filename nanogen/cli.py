@@ -2,12 +2,12 @@ import os
 
 import click
 
-import logger
-import version
-from nanogen import Blog
+from nanogen import logger
+from nanogen import version
+from nanogen import models
 
 
-blog = Blog()
+blog = models.Blog()
 
 
 @click.group()

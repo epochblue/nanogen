@@ -1,10 +1,10 @@
 import os
 from setuptools import setup
 
-from version import version
+from nanogen.version import version
 
 entry_points = {
-    'console_scripts': ['nanogen = cli:cli']
+    'console_scripts': ['nanogen = nanogen.cli:cli']
 }
 
 long_description = open(
@@ -38,8 +38,8 @@ setup(name='nanogen',
           'Intended Audience :: Information Technology',
           'License :: OSI Approved :: MIT License',
           'Operating System :: OS Independent',
-          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Topic :: Internet :: WWW/HTTP',
           'Topic :: Utilities',
           'Topic :: Software Development :: Libraries :: Python Modules'
