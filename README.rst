@@ -7,6 +7,10 @@ A very small static blog generator written in Python.
     :target: https://pypi.python.org/pypi/nanogen
     :alt: Latest PyPI version
 
+.. image:: https://travis-ci.org/epochblue/nanogen.svg?branch=master
+    :target: https://travis-ci.org/epochblue/nanogen
+    :alt: nanogen build status
+
 Purpose
 =======
 
