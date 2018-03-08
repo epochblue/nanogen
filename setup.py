@@ -6,6 +6,7 @@ from nanogen.version import version
 install_requires = [
     'click==6.7',
     'mistune==0.8.3',
+    'mistune-contrib==0.1',
     'Jinja2==2.10',
     'Pygments==2.2.0'
 ]
