@@ -31,5 +31,5 @@ if __name__ == '__main__':
     assert is_balanced(')(') is False
     assert is_balanced('(()))(') is False
 
-    print 'All tests passed.'
+    print('All tests passed.')
 ```
