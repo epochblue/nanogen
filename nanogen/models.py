@@ -2,6 +2,7 @@
 nanogen - a very small blog generator
 """
 import datetime
+import json
 import os
 import shutil
 import subprocess
@@ -86,6 +87,7 @@ class Blog(object):
 
         jinja_loader = jinja2.FileSystemLoader(self.PATHS['layout'])
         self.jinja_env = jinja2.Environment(loader=jinja_loader)
+        self.jinja_env.filters['to_json'] = json.dumps
 
     def parse_config(self):
         """

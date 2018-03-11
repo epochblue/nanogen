@@ -13,9 +13,9 @@
       "id": "{{ site.url }}/{{ post.permalink }}",
       "url": "{{ site.url }}/{{ post.permalink }}",
       "title": "{{ post.title }}",
-      "content_html": "{{ post.html_content }}",
-      "date_published": "{{ post.pub_date.strftime('%Y-%m-%dT%H:%M:%S-0000') }}"
-    }
+      "content_html": {{ post.html_content|to_json }},
+      "date_published": "{{ post.pub_date.strftime('%Y-%m-%dT%H:%M:%SZ') }}"
+    }{% if not loop.last %},{% endif %}
     {% endfor %}
   ]
 }
