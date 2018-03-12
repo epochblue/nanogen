@@ -116,13 +116,11 @@ def test_blog_copy_static_files(tmpdir):
     # Add a static file to the projet
     blog = models.Blog(str(path))
     blog.init()
-    css_file = path.join('_layout').mkdir('static').join('example.css')
-    css_file.write('# CSS goes here')
     blog.copy_static_files()
 
     site_static_path = site_path.join('static')
     static_files = [os.path.basename(str(file)) for file in site_static_path.listdir()]
-    assert 'example.css' in static_files
+    assert 'blog.css' in static_files
 
 
 def test_blog_generate_posts(tmpdir):
@@ -143,9 +141,6 @@ def test_blog_generate_posts(tmpdir):
     <body>Single post template would go here.</body>
     </html>
     """)
-
-    blog_config = path.join('_layout').join('blog.cfg')
-    blog_config.write(example_config)
 
     # Refresh the blog instance to better emulate real-world usage
     blog = models.Blog(str(path))
@@ -169,17 +164,6 @@ def test_blog_generate_index_page(tmpdir):
     with mock.patch('subprocess.call'):
         blog.new_post('Test title 1', draft=False)
 
-    index_template = path.join('_layout').join('index.html')
-    index_template.write("""\
-    <!doctype html>
-    <html>
-    <body>Index template would go here.</body>
-    </html>
-    """)
-
-    blog_config = path.join('_layout').join('blog.cfg')
-    blog_config.write('[site]')
-
     # Refresh the blog instance to better emulate real-world usage
     blog = models.Blog(str(path))
     blog.generate_index_page()
@@ -196,8 +180,9 @@ def test_blog_generate_feeds_no_feed_files(tmpdir):
     blog = models.Blog(str(path))
     blog.init()
 
-    blog_config = path.join('_layout').join('blog.cfg')
-    blog_config.write(example_config)
+    # Remove the feed files
+    os.unlink(os.path.join(blog.PATHS['layout'], 'rss.xml'))
+    os.unlink(os.path.join(blog.PATHS['layout'], 'feed.json'))
 
     # Refresh the blog instance to better emulate real-world usage
     blog = models.Blog(str(path))
@@ -219,15 +204,6 @@ def test_blog_feeds(tmpdir):
     with mock.patch('subprocess.call'):
         blog.new_post('Test title 1', draft=False)
 
-    rss_template = path.join('_layout').join('rss.xml')
-    rss_template.write("""RSS Feed template would go here.""")
-
-    json_template = path.join('_layout').join('feed.json')
-    json_template.write("""JSON Feed template would go here.""")
-
-    blog_config = path.join('_layout').join('blog.cfg')
-    blog_config.write(example_config)
-
     # Refresh the blog instance to better emulate real-world usage
     blog = models.Blog(str(path))
     blog.generate_feeds()
@@ -238,48 +214,28 @@ def test_blog_feeds(tmpdir):
 
 
 def test_blog_build_and_clean(tmpdir):
-    def test_blog_generate_index_page(tmpdir):
-        path = tmpdir.mkdir('blog')
-        site_path = path.mkdir('_site')
+    path = tmpdir.mkdir('blog')
+    site_path = path.mkdir('_site')
 
-        # Set up a nanogen blog for posts
-        blog = models.Blog(str(path))
-        blog.init()
+    # Set up a nanogen blog for posts
+    blog = models.Blog(str(path))
+    blog.init()
 
-        with mock.patch('subprocess.call'):
-            blog.new_post('Test title 1', draft=False)
+    with mock.patch('subprocess.call'):
+        blog.new_post('Test title 1', draft=False)
 
-        post_template = path.join('_layout').join('post.html')
-        post_template.write("""\
-        <!doctype html>
-        <html>
-        <body>Post template would go here.</body>
-        </html>
-        """)
+    # Refresh the blog instance to better emulate real-world usage
+    blog = models.Blog(str(path))
+    blog.build()
 
-        index_template = path.join('_layout').join('index.html')
-        index_template.write("""\
-        <!doctype html>
-        <html>
-        <body>Index template would go here.</body>
-        </html>
-        """)
+    site_dir = [os.path.basename(str(file)) for file in site_path.listdir()]
+    assert 'index.html' in site_dir
 
-        blog_config = path.join('_layout').join('blog.cfg')
-        blog_config.write(example_config)
+    today = datetime.date.today()
+    expected_post_dir = site_path.join('{}'.format(today.year)).join('{:02d}'.format(today.month))
+    generated_posts = [os.path.basename(str(file)) for file in expected_post_dir.listdir()]
+    assert len(generated_posts) == 1
+    assert 'test-title-1.html' in generated_posts
 
-        # Refresh the blog instance to better emulate real-world usage
-        blog = models.Blog(str(path))
-        blog.build()
-
-        site_dir = [os.path.basename(str(file)) for file in site_path.listdir()]
-        assert 'index.html' in site_dir
-
-        today = datetime.date.today()
-        expected_post_dir = site_path.join('{}'.format(today.year)).join('{:02d}'.format(today.month))
-        generated_posts = [os.path.basename(str(file)) for file in expected_post_dir.listdir()]
-        assert len(generated_posts) == 1
-        assert 'test-title-1.html' in generated_posts
-
-        blog.clean()
-        assert not os.path.isdir(site_path)
+    blog.clean()
+    assert not os.path.isdir(str(site_path))
