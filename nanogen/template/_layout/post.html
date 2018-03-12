@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ site.title }} - {{ post.title }}{% endblock %}
+
+{% block content %}
+    <div class="post">
+        <div class="post-header">
+            <h2 class="post-title">{{ post.title }}</h2>
+            <span class="permalink">Posted on <a href="{{site.url}}/{{ post.permalink }}">{{ post.pub_date.strftime('%Y-%m-%d') }}</a></span>
+        </div>
+
+        {{ post.html_content }}
+    </div>
+{% endblock %}

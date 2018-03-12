@@ -198,24 +198,21 @@ class Blog(object):
 
         :return: None
         """
-        for d in (self.PATHS['posts'], self.PATHS['layout'], self.PATHS['drafts']):
-            logger.log.debug('Creating directory %s' % d)
-            if not os.path.isdir(d):
-                subprocess.call(['mkdir', d])
+        current_dir = self.PATHS['cwd']
+        parent_dir = os.path.dirname(__file__)
+        template_dir = os.path.join(parent_dir, 'template')
+        for item in os.listdir(template_dir):
+            source = os.path.join(template_dir, item)
+            dest = os.path.join(current_dir, item)
 
-        # Generate template blog configuration file
-        config_path = os.path.join(self.PATHS['cwd'], 'blog.cfg')
-        if not os.path.exists(config_path):
-            with open(config_path, 'w') as f:
-                text = textwrap.dedent("""\
-                [site]
-                title = Your blog's title here
-                author = Your name here
-                email = you@wherever.com
-                url = https://yourblog.example.com
-                description = Your blog's description here
-                """)
-                f.write(text)
+            if os.path.exists(dest):
+                continue
+
+            ignored_names = lambda src, names: [n for n in names if n.startswith('.')]
+            if os.path.isdir(source):
+                shutil.copytree(source, dest, ignore=ignored_names)
+            else:
+                shutil.copy2(source, dest)
 
     def build(self):
         """
