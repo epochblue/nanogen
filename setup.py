@@ -3,6 +3,13 @@ from setuptools import setup
 
 from nanogen.version import version
 
+
+def extra_files(path):
+    return [os.path.join('..', path, name)
+            for (path, _, names) in os.walk(path)
+            for name in names]
+
+
 install_requires = [
     'click==6.7',
     'mistune==0.8.3',
@@ -26,6 +33,7 @@ long_description = open(
     )
 ).read()
 
+
 setup(name='nanogen',
       version=version,
       description='A very small static blog generator',
@@ -35,6 +43,7 @@ setup(name='nanogen',
       license='MIT',
       url='https://github.com/epochblue/nanogen',
       packages=['nanogen'],
+      package_data={'nanogen': extra_files(os.path.join('nanogen', 'template'))},
       install_requires=install_requires,
       extras_require={
           'dev': dev_requires,

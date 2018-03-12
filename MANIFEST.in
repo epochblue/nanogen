@@ -1,0 +1,5 @@
+include README.rst
+include LICENSE
+graft nanogen
+global-exclude __pycache__
+global-exclude *.py[co]
