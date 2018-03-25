@@ -73,17 +73,19 @@ class Post(object):
 
 
 class Blog(object):
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, is_preview=False):
         self.PATHS = {
             'cwd': base_dir,
             'site': os.path.join(base_dir, '_site'),
+            'preview': os.path.join(base_dir, '_preview'),
             'posts': os.path.join(base_dir, '_posts'),
             'drafts': os.path.join(base_dir, '_drafts'),
             'layout': os.path.join(base_dir, '_layout')
         }
         
         self.config = self.parse_config()
-        self.posts = self.collect_posts()
+        self.output_dir = self.PATHS['preview'] if is_preview else self.PATHS['site']
+        self.posts = self.collect_posts(include_drafts=is_preview)
 
         jinja_loader = jinja2.FileSystemLoader(self.PATHS['layout'])
         self.jinja_env = jinja2.Environment(loader=jinja_loader)
@@ -100,10 +102,12 @@ class Blog(object):
         config.read(os.path.join(self.PATHS['cwd'], 'blog.cfg'))
         return config
 
-    def collect_posts(self):
+    def collect_posts(self, include_drafts=False):
         """
         Finds valid post files within the posts directory.
 
+        :param include_drafts: True if draft posts should be included
+        :type include_drafts: bool
         :return: A list of found posts
         :rtype: list
         """
@@ -113,9 +117,17 @@ class Blog(object):
 
         ls = os.listdir(self.PATHS['posts'])
         post_path = lambda path: os.path.join(self.PATHS['posts'], path)
-        return [Post(self.PATHS['site'], post_path(p))
-                for p in ls
-                if utils.is_valid_post_file(p)]
+        posts = [Post(self.output_dir, post_path(p))
+                 for p in ls
+                 if utils.is_valid_post_file(p)]
+
+        if include_drafts:
+            ls = os.listdir(self.PATHS['drafts'])
+            drafts_path = lambda path: os.path.join(self.PATHS['drafts'], path)
+            posts.extend([Post(self.output_dir, drafts_path(p))
+                          for p in ls
+                          if utils.is_valid_post_file(p)])
+        return posts
 
     def generate_posts(self):
         """
@@ -150,12 +162,12 @@ class Blog(object):
         posts = self.posts
 
         logger.log.debug('Rendering index.html')
-        filepath = os.path.join(self.PATHS['site'], 'index.html')
+        output_file = os.path.join(self.output_dir, 'index.html')
         template = self.jinja_env.get_template('index.html')
         html = template.render(site=self.config['site'], posts=list(reversed(posts)))
 
         logger.log.debug('Writing page to disk: index.html')
-        with open(filepath, 'w') as pout:
+        with open(output_file, 'w') as pout:
             pout.write(html)
 
     def generate_feeds(self):
@@ -164,7 +176,7 @@ class Blog(object):
 
         for feed in ('rss.xml', 'feed.json'):
             logger.log.debug('Rendering index.html')
-            filepath = os.path.join(self.PATHS['site'], feed)
+            output_file = os.path.join(self.output_dir, feed)
 
             try:
                 template = self.jinja_env.get_template(feed)
@@ -175,22 +187,22 @@ class Blog(object):
             html = template.render(site=self.config['site'], posts=list(reversed(posts)))
 
             logger.log.debug('Writing page to disk: %s', feed)
-            with open(filepath, 'w') as pout:
+            with open(output_file, 'w') as pout:
                 pout.write(html)
 
     def copy_static_files(self):
         """
-        Copy static files into the _sites directory.
+        Copy static files into the output directory.
 
         :return: None
         """
         layout_static = os.path.join(self.PATHS['layout'], 'static')
-        site_static = os.path.join(self.PATHS['site'], 'static')
+        output_static = os.path.join(self.output_dir, 'static')
 
-        if os.path.isdir(os.path.join(site_static)):
-            shutil.rmtree(site_static)
+        if os.path.isdir(os.path.join(output_static)):
+            shutil.rmtree(output_static)
 
-        shutil.copytree(layout_static, site_static)
+        shutil.copytree(layout_static, output_static)
 
     def init(self):
         """
@@ -216,13 +228,13 @@ class Blog(object):
 
     def build(self):
         """
-        Generate the site. Will create the _site dir if one doesn't already exist.
+        Generate the site. Will create the output dir if necessary.
 
         :return: None
         """
-        if not os.path.isdir(self.PATHS['site']):
-            logger.log.debug('Creating site directory...')
-            subprocess.call(['mkdir', self.PATHS['site']])
+        if not os.path.isdir(self.output_dir):
+            logger.log.debug('Creating output directory...')
+            subprocess.call(['mkdir', self.output_dir])
 
         self.generate_posts()
         self.generate_index_page()
@@ -236,9 +248,8 @@ class Blog(object):
         :return: None
         """
         logger.log.info('Cleaning generated files...')
-        site_dir = self.PATHS['site']
-        if os.path.isdir(site_dir):
-            subprocess.call(['rm', '-r', site_dir])
+        if os.path.isdir(self.output_dir):
+            subprocess.call(['rm', '-r', self.output_dir])
 
     def new_post(self, title, draft=False):
         """

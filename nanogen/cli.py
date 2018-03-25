@@ -7,9 +7,6 @@ from nanogen import version
 from nanogen import models
 
 
-blog = models.Blog(os.getcwd())
-
-
 @click.group()
 @click.option('-v', '--verbose', count=True, help='Turn on verbose output.')
 @click.version_option(version=version.version)
@@ -20,18 +17,21 @@ def cli(verbose):
 @cli.command()
 def init():
     """Initialize the current directory."""
+    blog = models.Blog(os.getcwd())
     blog.init()
 
 
 @cli.command()
 def clean():
     """Clean any generated files."""
+    blog = models.Blog(os.getcwd())
     blog.clean()
 
 
 @cli.command()
 def build():
     """Start a build of the site."""
+    blog = models.Blog(os.getcwd())
     blog.build()
 
 
@@ -39,6 +39,7 @@ def build():
 @click.argument('title')
 def new(title):
     """Create a new post with the given title"""
+    blog = models.Blog(os.getcwd())
     try:
         blog.new_post(title)
     except ValueError as ve:
@@ -48,6 +49,7 @@ def new(title):
 @click.argument('title')
 def draft(title):
     """Create a new draft post with the given title"""
+    blog = models.Blog(os.getcwd())
     try:
         blog.new_post(title, draft=True)
     except ValueError as ve:
@@ -59,9 +61,9 @@ def draft(title):
 @click.option('-p', '--port', default=8080, type=int, help='The port to serve on')
 def preview(host, port):
     """Serve a preview of the site on HOST and PORT."""
-    site_dir = os.path.join(os.getcwd(), '_site')
-    if not os.path.isdir(site_dir):
-        click.ClickException('Unable to locate _site directory. Did you forget to run `nanogen build`?')
+    blog = models.Blog(os.getcwd(), is_preview=True)
+    blog.clean()
+    blog.build()
 
     try:
         import SimpleHTTPServer, BaseHTTPServer
@@ -77,7 +79,9 @@ def preview(host, port):
     try:
         click.secho('Serving your site on http://{host}:{port}/...'.format(host=host, port=port))
         click.secho('Press <Ctrl-C> to stop the server.\n')
-        os.chdir(site_dir)
+
+        os.chdir(blog.PATHS['preview'])
+
         httpd.serve_forever()
     except KeyboardInterrupt:
         httpd.server_close()
