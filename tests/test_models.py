@@ -224,6 +224,25 @@ def test_blog_build_and_clean(tmpdir):
     with mock.patch('subprocess.call'):
         blog.new_post('Test title 1', draft=False)
 
+    post_template = path.join('_layout').join('post.html')
+    post_template.write("""\
+    <!doctype html>
+    <html>
+    <body>Post template would go here.</body>
+    </html>
+    """)
+
+    index_template = path.join('_layout').join('index.html')
+    index_template.write("""\
+    <!doctype html>
+    <html>
+    <body>Index template would go here.</body>
+    </html>
+    """)
+
+    blog_config = path.join('_layout').join('blog.cfg')
+    blog_config.write(example_config)
+
     # Refresh the blog instance to better emulate real-world usage
     blog = models.Blog(str(path))
     blog.build()
@@ -239,3 +258,4 @@ def test_blog_build_and_clean(tmpdir):
 
     blog.clean()
     assert not os.path.isdir(str(site_path))
+

@@ -204,6 +204,9 @@ class Blog(object):
         layout_static = os.path.join(self.PATHS['layout'], 'static')
         output_static = os.path.join(self.output_dir, 'static')
 
+        if not os.path.isdir(layout_static):
+            return
+
         if os.path.isdir(os.path.join(output_static)):
             shutil.rmtree(output_static)
 
