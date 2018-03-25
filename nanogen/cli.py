@@ -67,12 +67,12 @@ def preview(host, port):
         import SimpleHTTPServer, BaseHTTPServer
         handler = SimpleHTTPServer.SimpleHTTPRequestHandler
         handler.protocol_version = 'HTTP/1.0'
-        httpd = BaseHTTPServer.HTTPServer((host, 8080), handler)
+        httpd = BaseHTTPServer.HTTPServer((host, port), handler)
     except ImportError:
         import http.server
         handler = http.server.SimpleHTTPRequestHandler
         handler.protocol_version = 'HTTP/1.0'
-        httpd = http.server.HTTPServer((host, 8080), handler)
+        httpd = http.server.HTTPServer((host, port), handler)
 
     try:
         click.secho('Serving your site on http://{host}:{port}/...'.format(host=host, port=port))
