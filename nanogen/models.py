@@ -171,6 +171,11 @@ class Blog(object):
             pout.write(html)
 
     def generate_feeds(self):
+        """
+        Generate RSS and JSON feed files, if templates for them exist.
+
+        :return: None
+        """
         logger.log.debug('Writing feed pages...')
         posts = self.posts
 
