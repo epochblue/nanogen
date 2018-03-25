@@ -16,4 +16,5 @@ dist
 
 # nanogen files
 example/_site
+example/_preview
 nanogen.log
