@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import click
@@ -85,3 +86,15 @@ def preview(host, port):
         httpd.serve_forever()
     except KeyboardInterrupt:
         httpd.server_close()
+
+
+@cli.command()
+@click.argument('filename')
+def publish(filename):
+    """Move a post from the _drafts dir to the _posts dir."""
+    blog = models.Blog(os.getcwd())
+
+    try:
+        blog.publish(filename)
+    except ValueError as ve:
+        click.ClickException(str(ve))

@@ -2,6 +2,8 @@ import datetime
 import os
 from unittest import mock
 
+import pytest
+
 from nanogen import models
 
 
@@ -307,3 +309,58 @@ def test_blog_build_and_clean_with_drafts(tmpdir):
 
     blog.clean()
     assert not os.path.isdir(str(preview_path))
+
+
+def test_publish(tmpdir):
+    path = tmpdir.mkdir('blog')
+    blog = models.Blog(str(path))
+    blog.init()
+
+    with mock.patch('subprocess.call'):
+        blog.new_post('Draft post', draft=True)
+
+    today = datetime.date.today()
+    posts_dir = path.join('_posts')
+    drafts_dir = path.join('_drafts')
+
+
+    expected_filename = '{}-{:02d}-{:02d}-draft-post.md'.format(
+        today.year,
+        today.month,
+        today.day
+    )
+
+    blog.publish(expected_filename)
+
+    posts = [os.path.basename(str(file)) for file in posts_dir.listdir()]
+    drafts = [os.path.basename(str(file)) for file in drafts_dir.listdir()]
+    assert len(drafts) == 0
+    assert expected_filename in posts
+
+def test_publish_raises_value_error(tmpdir):
+    path = tmpdir.mkdir('blog')
+    blog = models.Blog(str(path))
+    blog.init()
+
+    with mock.patch('subprocess.call'):
+        blog.new_post('Draft post', draft=True)
+
+    today = datetime.date.today()
+    posts_dir = path.join('_posts')
+    drafts_dir = path.join('_drafts')
+
+
+    failing_filename = 'post-doesnt-exist.md'
+    expected_filename = '{}-{:02d}-{:02d}-draft-post.md'.format(
+        today.year,
+        today.month,
+        today.day
+    )
+
+    with pytest.raises(ValueError) as e_info:
+        blog.publish(failing_filename)
+
+    posts = [os.path.basename(str(file)) for file in posts_dir.listdir()]
+    drafts = [os.path.basename(str(file)) for file in drafts_dir.listdir()]
+    assert len(posts) == 0
+    assert expected_filename in drafts

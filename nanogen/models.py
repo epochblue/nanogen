@@ -293,3 +293,38 @@ class Blog(object):
         # Open your new post in $VISUAL or $EDITOR or fallback to `nano`
         editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'nano'))
         subprocess.call([editor, full_path])
+
+    def publish(self, filename):
+        """
+        Publishes a post currently in draft by moving it from the drafts
+        folder to the posts folder, and updating its date to today's date (the
+        date of "publication").
+
+        :param filename: The filename of the draft being published
+        :type filename: str
+        :return: None
+        """
+        drafts_dir = self.PATHS['drafts']
+        posts_dir = self.PATHS['posts']
+        filename_with_ext = os.path.basename(filename)
+
+        drafts = os.listdir(drafts_dir)
+        if filename_with_ext not in drafts:
+            raise ValueError('Unable to locate {} in drafts'.format(filename))
+
+        filename, ext = filename_with_ext.rsplit('.', 1)
+
+        today = datetime.date.today()
+        filename_parts = filename.split('-', 3)
+        post_filename = '{year}-{month:02d}-{day:02d}-{slug}.{ext}'.format(
+            year=today.year,
+            month=today.month,
+            day=today.day,
+            slug=filename_parts[-1],
+            ext=ext
+        )
+
+        os.rename(
+            os.path.join(drafts_dir, filename_with_ext),
+            os.path.join(posts_dir, post_filename)
+        )
